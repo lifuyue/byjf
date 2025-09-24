@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: PG-Plus API
+  version: 0.1.0
+  description: >-
+    Scaffolded OpenAPI definition. Replace with generated schema once endpoints
+    exist.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Lightweight service liveness probe.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /auth/login:
+    post:
+      summary: JWT login placeholder
+      description: Exchange credentials for JWTs.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required:
+                - username
+                - password
+      responses:
+        '200':
+          description: JWT pair response placeholder
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+                  refresh:
+                    type: string
+        '501':
+          description: Not yet implemented

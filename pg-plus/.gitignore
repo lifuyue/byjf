@@ -1,0 +1,35 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+
+# Virtual environments
+.env
+.venv
+venv/
+
+# Django media and static builds
+backend/media/
+backend/staticfiles/
+
+# Node/Vite artifacts
+node_modules/
+*.tsbuildinfo
+*.log
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Frontend build outputs
+web-student/dist/
+web-admin/dist/
+
+# Env files
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
