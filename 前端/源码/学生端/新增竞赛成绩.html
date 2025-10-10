@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增竞赛成绩</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 25px 30px;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-3px);
+        }
+        
+        .page-title {
+            flex: 1;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-right: 100px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .form-section, .records-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #4a6fa5;
+        }
+        
+        .form-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5ee;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #4a6fa5;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+        
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: white;
+            border: 2px dashed #c3cfe2;
+            border-radius: 8px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-label:hover {
+            border-color: #4a6fa5;
+            background: #f0f4ff;
+        }
+        
+        .file-name {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #4a6fa5;
+        }
+        
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.3);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .records-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .record-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+        
+        .record-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .record-info {
+            flex: 1;
+        }
+        
+        .record-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .record-details {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .record-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .empty-records {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .page-title {
+                margin-right: 0;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .record-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .record-status {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+            <h1 class="page-title">新增竞赛成绩</h1>
+        </div>
+        
+        <div class="content">
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-plus-circle"></i>
+                    提交竞赛成绩
+                </h2>
+                <div class="form-container">
+                    <form id="competitionForm">
+                        <div class="form-group">
+                            <label for="competitionName">竞赛名称</label>
+                            <input type="text" id="competitionName" class="form-control" placeholder="请输入竞赛名称" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="expectedPoints">预期加分</label>
+                            <input type="text" id="expectedPoints" class="form-control" placeholder="请输入预期加分分值" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>证明文件</label>
+                            <div class="file-upload">
+                                <input type="file" id="proofFile" class="file-input" accept=".pdf" required>
+                                <label for="proofFile" class="file-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>点击上传PDF证明文件</span>
+                                </label>
+                            </div>
+                            <div id="fileName" class="file-name"></div>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-paper-plane"></i>
+                            提交申请
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="records-section">
+                <h2 class="section-title">
+                    <i class="fas fa-clock"></i>
+                    审核中的竞赛成绩
+                </h2>
+                <div class="records-container">
+                    <div class="record-list" id="pendingRecords">
+                        <!-- 审核中的记录将通过JavaScript动态添加 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>信息学院竞赛成绩管理系统 &copy; 2024 版权所有</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('competitionForm');
+            const fileInput = document.getElementById('proofFile');
+            const fileName = document.getElementById('fileName');
+            const pendingRecords = document.getElementById('pendingRecords');
+            
+            // 模拟已有的审核中记录
+            const initialRecords = [
+                { id: 1, name: "全国大学生程序设计大赛", points: "5分", date: "2024-03-15", status: "pending" },
+                { id: 2, name: "数学建模竞赛", points: "3分", date: "2024-03-10", status: "pending" }
+            ];
+            
+            // 初始化显示已有的审核中记录
+            renderPendingRecords();
+            
+            // 文件上传显示文件名
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileName.textContent = `已选择文件: ${this.files[0].name}`;
+                } else {
+                    fileName.textContent = '';
+                }
+            });
+            
+            // 表单提交处理
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const competitionName = document.getElementById('competitionName').value;
+                const expectedPoints = document.getElementById('expectedPoints').value;
+                const proofFile = fileInput.files[0];
+                
+                // 简单验证
+                if (!competitionName || !expectedPoints || !proofFile) {
+                    alert('请填写所有必填字段并上传证明文件');
+                    return;
+                }
+                
+                // 在实际应用中，这里应该发送数据到服务器
+                // 这里模拟提交成功
+                const newRecord = {
+                    id: Date.now(), // 使用时间戳作为ID
+                    name: competitionName,
+                    points: expectedPoints + '分',
+                    date: new Date().toISOString().split('T')[0],
+                    status: 'pending'
+                };
+                
+                // 添加到审核中记录列表
+                initialRecords.unshift(newRecord);
+                renderPendingRecords();
+                
+                // 显示成功消息
+                alert('竞赛成绩提交成功！已进入审核流程。');
+                
+                // 重置表单
+                form.reset();
+                fileName.textContent = '';
+            });
+            
+            // 渲染审核中的记录
+            function renderPendingRecords() {
+                if (initialRecords.length === 0) {
+                    pendingRecords.innerHTML = '<div class="empty-records">暂无审核中的竞赛成绩</div>';
+                    return;
+                }
+                
+                pendingRecords.innerHTML = '';
+                initialRecords.forEach(record => {
+                    const recordElement = document.createElement('div');
+                    recordElement.className = 'record-item';
+                    recordElement.innerHTML = `
+                        <div class="record-info">
+                            <div class="record-name">${record.name}</div>
+                            <div class="record-details">
+                                <span>预期加分: ${record.points}</span>
+                                <span>提交日期: ${record.date}</span>
+                            </div>
+                        </div>
+                        <div class="record-status status-pending">审核中</div>
+                    `;
+                    pendingRecords.appendChild(recordElement);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

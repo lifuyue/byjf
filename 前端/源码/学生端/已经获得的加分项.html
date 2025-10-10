@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>已经获得的加分项 - 保研加分小助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* 头部导航 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .page-title {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 统计信息 */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #4a6fa5;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        /* 筛选和搜索 */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border: 1px solid #e1e5ee;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #4a6fa5;
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .filter-select {
+            padding: 12px 20px;
+            border: 1px solid #e1e5ee;
+            border-radius: 25px;
+            font-size: 16px;
+            background: white;
+            min-width: 180px;
+            cursor: pointer;
+        }
+        
+        /* 加分项列表 */
+        .items-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .items-title {
+            font-size: 22px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .items-count {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .item-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4a6fa5;
+            transition: all 0.3s ease;
+        }
+        
+        .item-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .item-level {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .level-national {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .level-provincial {
+            background: #4ecdc4;
+            color: white;
+        }
+        
+        .level-municipal {
+            background: #45b7d1;
+            color: white;
+        }
+        
+        .level-school {
+            background: #96ceb4;
+            color: white;
+        }
+        
+        .item-details {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .item-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .item-points {
+            background: #4a6fa5;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 700;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        
+        .empty-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-subtext {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .item-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .item-points {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部导航 -->
+        <div class="header">
+            <h1 class="page-title">已经获得的加分项</h1>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">总加分项数量</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">133</div>
+                <div class="stat-label">累计加分</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">国家级奖项</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">省级奖项</div>
+            </div>
+        </div>
+        
+        <!-- 筛选和搜索 -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="搜索加分项...">
+                </div>
+                <select class="filter-select" id="levelFilter">
+                    <option value="all">所有等级</option>
+                    <option value="national">国家级</option>
+                    <option value="provincial">省级</option>
+                    <option value="municipal">市级</option>
+                    <option value="school">校级</option>
+                </select>
+                <select class="filter-select" id="yearFilter">
+                    <option value="all">所有年份</option>
+                    <option value="2024">2024年</option>
+                    <option value="2023">2023年</option>
+                    <option value="2022">2022年</option>
+                    <option value="2021">2021年</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- 加分项列表 -->
+        <div class="items-container">
+            <div class="items-header">
+                <h2 class="items-title">所有加分项</h2>
+                <div class="items-count">共12个项目</div>
+            </div>
+            
+            <div class="items-list" id="itemsList">
+                <!-- 项目1 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生数学建模竞赛</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年9月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+15分</div>
+                </div>
+                
+                <!-- 项目2 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">"挑战杯"全国大学生课外学术科技作品竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年6月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+12分</div>
+                </div>
+                
+                <!-- 项目3 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">ACM国际大学生程序设计竞赛</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年11月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+10分</div>
+                </div>
+                
+                <!-- 项目4 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">学术论文发表</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年12月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+8分</div>
+                </div>
+                
+                <!-- 项目5 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生英语竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年5月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+10分</div>
+                </div>
+                
+                <!-- 项目6 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">"互联网+"大学生创新创业大赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年4月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+15分</div>
+                </div>
+                
+                <!-- 项目7 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生机器人大赛</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年7月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+12分</div>
+                </div>
+                
+                <!-- 项目8 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生电子设计竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年8月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+15分</div>
+                </div>
+                
+                <!-- 项目9 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">校级程序设计竞赛</h3>
+                            <span class="item-level level-school">校级</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年3月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+5分</div>
+                </div>
+                
+                <!-- 项目10 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">市级科技创新大赛</h3>
+                            <span class="item-level level-municipal">市级</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年2月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+8分</div>
+                </div>
+                
+                <!-- 项目11 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">省级数学竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2022年11月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+10分</div>
+                </div>
+                
+                <!-- 项目12 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">校级科研项目</h3>
+                            <span class="item-level level-school">校级</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2022年10月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+6分</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 筛选功能实现
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('.search-input');
+            const levelFilter = document.getElementById('levelFilter');
+            const yearFilter = document.getElementById('yearFilter');
+            const itemsList = document.getElementById('itemsList');
+            const itemCards = document.querySelectorAll('.item-card');
+            const itemsCount = document.querySelector('.items-count');
+            
+            // 筛选函数
+            function filterItems() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const levelValue = levelFilter.value;
+                const yearValue = yearFilter.value;
+                
+                let visibleCount = 0;
+                
+                itemCards.forEach(card => {
+                    const title = card.querySelector('.item-title').textContent.toLowerCase();
+                    const level = card.querySelector('.item-level').classList.contains('level-' + levelValue);
+                    const dateText = card.querySelector('.item-date').textContent;
+                    const yearMatch = yearValue === 'all' || dateText.includes(yearValue);
+                    
+                    const matchesSearch = title.includes(searchTerm);
+                    const matchesLevel = levelValue === 'all' || level;
+                    const matchesYear = yearMatch;
+                    
+                    if (matchesSearch && matchesLevel && matchesYear) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                // 更新项目计数
+                itemsCount.textContent = `共${visibleCount}个项目`;
+                
+                // 如果没有匹配的项目，显示空状态
+                if (visibleCount === 0) {
+                    if (!document.querySelector('.empty-state')) {
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'empty-state';
+                        emptyState.innerHTML = `
+                            <div class="empty-icon">
+                                <i class="far fa-folder-open"></i>
+                            </div>
+                            <div class="empty-text">没有找到匹配的加分项</div>
+                            <div class="empty-subtext">尝试调整筛选条件或搜索关键词</div>
+                        `;
+                        itemsList.appendChild(emptyState);
+                    }
+                } else {
+                    const emptyState = document.querySelector('.empty-state');
+                    if (emptyState) {
+                        emptyState.remove();
+                    }
+                }
+            }
+            
+            // 添加事件监听器
+            searchInput.addEventListener('input', filterItems);
+            levelFilter.addEventListener('change', filterItems);
+            yearFilter.addEventListener('change', filterItems);
+            
+            // 添加项目卡片悬停效果
+            itemCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

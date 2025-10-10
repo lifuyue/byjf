@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人主页</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+            min-height: 80vh;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 25px 30px;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-3px);
+        }
+        
+        .page-title {
+            flex: 1;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-right: 100px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .profile-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #4a6fa5;
+        }
+        
+        .profile-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+        
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .change-avatar-btn {
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .change-avatar-btn:hover {
+            background: #3a5a80;
+            transform: translateY(-2px);
+        }
+        
+        .info-section {
+            flex: 1;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .info-table tr {
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .info-table tr:last-child {
+            border-bottom: none;
+        }
+        
+        .info-table td {
+            padding: 18px 20px;
+        }
+        
+        .info-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #2c3e50;
+            width: 120px;
+        }
+        
+        .info-value {
+            color: #444;
+        }
+        
+        .highlight-value {
+            color: #4a6fa5;
+            font-weight: 600;
+        }
+        
+        .rank-value {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .points-value {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        .actions-section {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #3a5a80;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 111, 165, 0.3);
+        }
+        
+        .action-btn.secondary {
+            background: #6c757d;
+        }
+        
+        .action-btn.secondary:hover {
+            background: #5a6268;
+        }
+        
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .page-title {
+                margin-right: 0;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .profile-container {
+                flex-direction: column;
+                gap: 25px;
+            }
+            
+            .actions-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+            <h1 class="page-title">个人主页</h1>
+        </div>
+        
+        <div class="content">
+            <div class="profile-section">
+                <h2 class="section-title">
+                    <i class="fas fa-user-circle"></i>
+                    个人信息
+                </h2>
+                
+                <div class="profile-container">
+                    <div class="avatar-section">
+                        <div class="avatar" id="userAvatar">张</div>
+                        <button class="change-avatar-btn">
+                            <i class="fas fa-camera"></i>
+                            更换头像
+                        </button>
+                    </div>
+                    
+                    <div class="info-section">
+                        <table class="info-table">
+                            <tr>
+                                <td class="info-label">姓名</td>
+                                <td class="info-value highlight-value" id="userName">张三</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">性别</td>
+                                <td class="info-value" id="userGender">男</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">学号</td>
+                                <td class="info-value highlight-value" id="userStudentId">20210005</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">学院</td>
+                                <td class="info-value" id="userCollege">信息科学与技术学院</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">专业</td>
+                                <td class="info-value" id="userMajor">计算机科学与技术</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">GPA</td>
+                                <td class="info-value highlight-value" id="userGPA">3.78</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">共计加分</td>
+                                <td class="info-value points-value" id="userPoints">+6分</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">专业排名</td>
+                                <td class="info-value rank-value" id="userRank">第5名</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">联系电话</td>
+                                <td class="info-value" id="userPhone">138****5678</td>
+                            </tr>
+                            <tr>
+                                <td class="info-label">电子邮箱</td>
+                                <td class="info-value" id="userEmail">zhangsan@example.com</td>
+                            </tr>
+                        </table>
+                        
+                        <div class="actions-section">
+                            <button class="action-btn">
+                                <i class="fas fa-edit"></i>
+                                编辑信息
+                            </button>
+                            <button class="action-btn secondary">
+                                <i class="fas fa-lock"></i>
+                                修改密码
+                            </button>
+                            <button class="action-btn secondary">
+                                <i class="fas fa-download"></i>
+                                导出个人信息
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>个人主页 &copy; 2024 版权所有</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage获取用户数据
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            
+            // 如果未登录，跳转到登录页面
+            if (!isLoggedIn) {
+                alert('请先登录！');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // 设置用户数据
+            document.getElementById('userName').textContent = userData.nickname || userData.username || '张三';
+            document.getElementById('userAvatar').textContent = (userData.nickname || userData.username || '张三').charAt(0);
+            document.getElementById('userEmail').textContent = userData.username || 'zhangsan@example.com';
+            
+            // 模拟其他用户数据
+            const mockUserData = {
+                gender: '男',
+                studentId: '20210005',
+                college: '信息科学与技术学院',
+                major: '计算机科学与技术',
+                gpa: '3.78',
+                points: '+6分',
+                rank: '第5名',
+                phone: '138****5678'
+            };
+            
+            // 设置模拟数据
+            document.getElementById('userGender').textContent = mockUserData.gender;
+            document.getElementById('userStudentId').textContent = mockUserData.studentId;
+            document.getElementById('userCollege').textContent = mockUserData.college;
+            document.getElementById('userMajor').textContent = mockUserData.major;
+            document.getElementById('userGPA').textContent = mockUserData.gpa;
+            document.getElementById('userPoints').textContent = mockUserData.points;
+            document.getElementById('userRank').textContent = mockUserData.rank;
+            document.getElementById('userPhone').textContent = mockUserData.phone;
+            
+            // 更换头像按钮点击事件
+            document.querySelector('.change-avatar-btn').addEventListener('click', function() {
+                alert('头像更换功能开发中...');
+            });
+            
+            // 编辑信息按钮点击事件
+            document.querySelectorAll('.action-btn')[0].addEventListener('click', function() {
+                alert('信息编辑功能开发中...');
+            });
+            
+            // 修改密码按钮点击事件
+            document.querySelectorAll('.action-btn')[1].addEventListener('click', function() {
+                alert('密码修改功能开发中...');
+            });
+            
+            // 导出个人信息按钮点击事件
+            document.querySelectorAll('.action-btn')[2].addEventListener('click', function() {
+                alert('个人信息导出功能开发中...');
+            });
+        });
+    </script>
+</body>
+</html>

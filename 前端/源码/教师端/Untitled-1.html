@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保研加分小助手教师端</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto 30px;
+        }
+        
+        .page-title {
+            color: #2c3e50;
+            font-size: 32px;
+            font-weight: 700;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .login-btn {
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .user-info {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .user-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            background: #f8f9fa;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-nickname {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .user-account {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 退出按钮样式 */
+        .logout-btn {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+            margin-left: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .container {
+            display: flex;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+            min-height: 80vh;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .left-panel {
+            flex: 1;
+            padding: 30px;
+            background: linear-gradient(to bottom right, #4a6fa5, #2c3e50);
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .right-panel {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        
+        .chart-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        
+        .pie-chart {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: conic-gradient(
+                rgba(255, 255, 255, 0.8) 0% 72%,
+                rgba(255, 255, 255, 0.2) 72% 100%
+            );
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pie-chart::before {
+            content: '';
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            background: linear-gradient(to bottom right, #4a6fa5, #2c3e50);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .chart-info {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .percentage {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .completed-text {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .progress-details {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .progress-item {
+            text-align: center;
+        }
+        
+        .progress-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .progress-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* 卡片之间的间距 */
+            margin-top: 30px;
+        }
+        
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border-left: 4px solid #4a6fa5;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            color: #333;
+            margin-bottom: 0; /* 去掉多余的 margin-bottom */
+        }
+        
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border-left-color: #2c3e50;
+        }
+        
+        .icon-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #f0f4f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a6fa5;
+            font-size: 20px;
+        }
+        
+        .action-card:hover .icon-container {
+            background: #4a6fa5;
+            color: white;
+        }
+        
+        .card-content h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .card-content p {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+        }
+        
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .item-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 18px;
+            transition: all 0.3s ease;
+            border-left: 4px solid #4a6fa5;
+        }
+        
+        .item-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .item-points {
+            background: #4a6fa5;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .item-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* 未登录状态样式 */
+        .login-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            gap: 15px;
+        }
+        
+        .login-prompt i {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .login-prompt-text {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .right-panel .login-prompt {
+            color: #666;
+        }
+        
+        .action-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .action-card.disabled:hover {
+            transform: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 退出确认弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: modalFadeIn 0.3s ease;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .modal-icon {
+            font-size: 48px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .modal-text {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .modal-btn-cancel {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #e1e5ee;
+        }
+        
+        .modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+        
+        .modal-btn-confirm {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .modal-btn-confirm:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        /* 登录表单样式 */
+        .login-box {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        .login-box h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e1e5ee;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+            transition: all 0.3s;
+        }
+        
+        .login-box input:focus {
+            border-color: #4a6fa5;
+            outline: none;
+        }
+        
+        .login-box button {
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .login-box button:hover {
+            background: #2c3e50;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .left-panel, .right-panel {
+                padding: 20px;
+            }
+            
+            .progress-details {
+                margin-top: 15px;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .user-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .logout-btn {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <h1 class="page-title">保研加分小助手教师端</h1>
+        <div class="user-section">
+            <button class="login-btn" id="loginBtn">登录</button>
+            <a href="个人主页.html" class="user-info" id="userInfo">
+                <div class="user-avatar" id="userAvatar">张</div>
+                <div class="user-details">
+                    <span class="user-nickname" id="userNickname">张三</span>
+                    <span class="user-account" id="userAccount">zhangsan@example.com</span>
+                </div>
+            </a>
+            <a href="#" class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                退出登录
+            </a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="left-panel">
+            <div class="header">
+                <h1>保研材料提交总人数</h1>
+                <p>待审核人数</p>
+            </div>
+            
+            <div class="chart-container" id="chartContainer">
+                <div class="pie-chart"></div>
+                <div class="chart-info">
+                     <div class="percentage">72 / 100</div>
+                    <div class="completed-text">已审核 / 总人数</div>
+                </div>
+            </div>
+            
+          <!--  
+            <div class="progress-details" id="progressDetails">
+                <div class="progress-item">
+                    <div class="progress-value">108</div>
+                    <div class="progress-label">已获加分</div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-value">42</div>
+                    <div class="progress-label">剩余加分</div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-value">150</div>
+                    <div class="progress-label">目标加分</div>
+                </div>
+            </div>
+            -->
+           
+            <div class="action-buttons">
+                <a href="审核界面.html" class="action-card">
+                    <div class="icon-container">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>进入审核</h3>
+                        <p>进入学生材料审核界面</p>
+                    </div>
+                </a>
+                <a href="学校保研政策.html" class="action-card">
+                    <div class="icon-container">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>学校保研政策</h3>
+                        <p>查看学校最新的保研政策和要求</p>
+                    </div>
+                </a>
+                <a href="专业排名（教师端）.html" class="action-card" id="rankingCard">
+                    <div class="icon-container">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>专业排名</h3>
+                        <p>查看专业内的排名情况</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="earned-points">
+                <h2 class="section-title">已经审批的学生</h2>
+                <div class="items-list" id="earnedPointsList"></div>
+            </div>
+            
+            <div class="recommended-competitions">
+                <h2 class="section-title">待审批的学生</h2>
+                <div class="items-list" id="recommendedCompetitionsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退出确认弹窗 -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">确认退出登录</h3>
+            <p class="modal-text">您确定要退出当前账号吗？退出后需要重新登录才能访问系统功能。</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="cancelLogout">取消</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmLogout">确认退出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录表单结构 -->
+    <div class="login-box">
+        <h2>欢迎回来</h2>
+        <form id="loginForm">
+            <div>
+                <input type="text" id="username" placeholder="用户名" required>
+            </div>
+            <div>
+                <input type="password" id="password" placeholder="密码" required>
+            </div>
+            <button type="submit">登录</button>
+        </form>
+        <div id="loginError" style="color:red; margin-top:10px; display:none;"></div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
+        const userAvatar = document.getElementById('userAvatar');
+        const userNickname = document.getElementById('userNickname');
+        const userAccount = document.getElementById('userAccount');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const logoutModal = document.getElementById('logoutModal');
+        const cancelLogout = document.getElementById('cancelLogout');
+        const confirmLogout = document.getElementById('confirmLogout');
+        
+        // 获取内容区域的DOM元素
+        const chartContainer = document.getElementById('chartContainer');
+        const progressDetails = document.getElementById('progressDetails');
+        const earnedPointsList = document.getElementById('earnedPointsList');
+        const recommendedCompetitionsList = document.getElementById('recommendedCompetitionsList');
+        const policyCard = document.getElementById('policyCard');
+        const rankingCard = document.getElementById('rankingCard');
+        const planCard = document.getElementById('planCard');
+        const competitionCard = document.getElementById('competitionCard');
+        
+        // 检查登录状态
+        function checkLoginStatus() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            
+            if (isLoggedIn && userData.username) {
+                // 已登录状态
+                loginBtn.style.display = 'none';
+                userInfo.style.display = 'flex';
+                logoutBtn.style.display = 'flex';
+                userNickname.textContent = userData.nickname || userData.username;
+                userAccount.textContent = userData.username;
+                userAvatar.textContent = (userData.nickname || userData.username).charAt(0);
+                
+                // 显示内容
+                showContent();
+            } else {
+                // 未登录状态
+                loginBtn.style.display = 'block';
+                userInfo.style.display = 'none';
+                logoutBtn.style.display = 'none';
+                
+                // 隐藏内容，显示登录提示
+                hideContent();
+            }
+        }
+        
+        // 隐藏内容，显示登录提示
+        function hideContent() {
+            // 左侧面板内容替换为登录提示
+            chartContainer.innerHTML = `
+                <div class="login-prompt">
+                    <i class="fas fa-user-lock"></i>
+                    <div class="login-prompt-text">请登录后再查看</div>
+                </div>
+            `;
+            
+            progressDetails.innerHTML = `
+                <div class="login-prompt">
+                    <div class="login-prompt-text">请登录后再查看</div>
+                </div>
+            `;
+            
+            // 右侧面板内容替换为登录提示
+            earnedPointsList.innerHTML = `
+                <div class="login-prompt">
+                    <i class="fas fa-user-lock"></i>
+                    <div class="login-prompt-text">请登录后再查看</div>
+                </div>
+            `;
+            
+            recommendedCompetitionsList.innerHTML = `
+                <div class="login-prompt">
+                    <i class="fas fa-user-lock"></i>
+                    <div class="login-prompt-text">请登录后再查看</div>
+                </div>
+            `;
+            
+            // 禁用功能卡片
+            [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
+                card.classList.add('disabled');
+                card.href = 'javascript:void(0)';
+            });
+        }
+        
+        // 显示内容
+        function showContent() {
+    // 假设你从后端或其他地方获取到这两个数据
+    let reviewedCount = 72;    // 已审核人数
+    let totalCount = 100;      // 总人数
+
+    // 恢复左侧面板内容
+    chartContainer.innerHTML = `
+        <div class="pie-chart"></div>
+        <div class="chart-info">
+            <div class="percentage">${reviewedCount} / ${totalCount}</div>
+            <div class="completed-text">已审核 / 总人数</div>
+        </div>
+    `;
+            
+           
+            
+            // 恢复右侧面板内容
+ earnedPointsList.innerHTML = `
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">张三</div>
+        </div>
+    </div>
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">李四</div>
+        </div>
+    </div>
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">王五</div>
+        </div>
+    </div>
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">张7</div>
+        </div>
+    </div>
+`;
+
+recommendedCompetitionsList.innerHTML = `
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">陈1</div>
+        </div>
+    </div>
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">陈2</div>
+        </div>
+    </div>
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">陈3</div>
+        </div>
+    </div>
+    <div class="item-card">
+        <div class="item-header">
+            <div class="item-title">陈4</div>
+        </div>
+    </div>
+`;
+            
+            // 启用功能卡片
+            [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
+                card.classList.remove('disabled');
+            });
+            
+            // 设置正确的链接
+            policyCard.href = '学校保研政策.html';
+            rankingCard.href = '专业排名.html';
+            //planCard.href = '我的保研计划.html';
+           // competitionCard.href = '新增竞赛成绩.html';
+        }
+        
+        // 登录按钮点击事件 - 跳转到登录页面
+        loginBtn.addEventListener('click', function() {
+            window.location.href = 'login教师端.html';
+        });
+        
+        // 功能卡片点击事件（未登录时）
+        function addCardClickListeners() {
+            [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (this.classList.contains('disabled')) {
+                        e.preventDefault();
+                        alert('请登录后再查看');
+                    }
+                });
+            });
+        }
+        
+        // 退出登录按钮点击事件
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logoutModal.style.display = 'flex';
+        });
+        
+        // 取消退出
+        cancelLogout.addEventListener('click', function() {
+            logoutModal.style.display = 'none';
+        });
+        
+        // 确认退出
+        confirmLogout.addEventListener('click', function() {
+            // 执行退出登录逻辑
+            logoutModal.querySelector('.modal-icon').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            logoutModal.querySelector('.modal-title').textContent = '正在退出...';
+            logoutModal.querySelector('.modal-text').textContent = '请稍候，正在安全退出您的账号';
+            logoutModal.querySelector('.modal-actions').style.display = 'none';
+            
+            // 模拟网络请求延迟
+            setTimeout(function() {
+                // 清除登录状态
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('userData');
+                
+                // 重置弹窗状态
+                logoutModal.style.display = 'none';
+                logoutModal.querySelector('.modal-icon').innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                logoutModal.querySelector('.modal-title').textContent = '确认退出登录';
+                logoutModal.querySelector('.modal-text').textContent = '您确定要退出当前账号吗？退出后需要重新登录才能访问系统功能。';
+                logoutModal.querySelector('.modal-actions').style.display = 'flex';
+                
+                // 更新界面显示
+                checkLoginStatus();
+                
+                // 显示退出成功提示
+                alert('已成功退出登录！');
+            }, 1000);
+        });
+        
+        // 点击弹窗外部关闭弹窗
+        window.addEventListener('click', function(e) {
+            if (e.target === logoutModal) {
+                logoutModal.style.display = 'none';
+            }
+        });
+        
+        // 页面加载时检查登录状态
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+            addCardClickListeners();
+            
+            // 添加卡片悬停效果
+            document.querySelectorAll('.action-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('disabled')) {
+                        this.style.transform = 'translateY(-5px)';
+                    }
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // 添加项目卡片悬停效果
+            document.querySelectorAll('.item-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+        });
+        
+        // 登录表单处理
+        // 假设教师账号为 teacher 密码为 123456
+    const TEACHER_USERNAME = "teacher";
+    const TEACHER_PASSWORD = "123456";
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
+            // 登录成功，保存状态到 localStorage
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userData', JSON.stringify({
+                username: username,
+                nickname: "张三" // 可自定义
+            }));
+            // 跳转到教师端页面
+            window.location.href = "login教师端.html";
+        } else {
+            // 登录失败
+            document.getElementById('loginError').style.display = 'block';
+            document.getElementById('loginError').innerText = '用户名或密码错误';
+        }
+    });
+    </script>
+</body>
+</html>

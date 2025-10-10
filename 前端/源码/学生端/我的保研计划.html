@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保研个人计划</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+            min-height: 80vh;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 25px 30px;
+            background: linear-gradient(to right, #4a6fa5, #2c3e50);
+            color: white;
+        }
+        
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-3px);
+        }
+        
+        .page-title {
+            flex: 1;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-right: 100px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .plan-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #4a6fa5;
+        }
+        
+        .plan-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .plan-table th {
+            background: #4a6fa5;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .plan-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .plan-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .plan-table tr:hover {
+            background: #f0f4f8;
+        }
+        
+        .goal-input, .date-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        .goal-input:focus, .date-input:focus {
+            border-color: #4a6fa5;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
+        .status-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .status-select:focus {
+            border-color: #4a6fa5;
+            outline: none;
+        }
+        
+        .status-completed {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .status-in-progress {
+            color: #ffc107;
+            font-weight: 600;
+        }
+        
+        .status-not-started {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background: #218838;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        
+        .add-plan-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .add-plan-btn:hover {
+            background: #3a5a80;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 111, 165, 0.3);
+        }
+        
+        .footer {
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .page-title {
+                margin-right: 0;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .plan-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+            <h1 class="page-title">我的保研计划</h1>
+        </div>
+        
+        <div class="content">
+            <div class="plan-section">
+                <h2 class="section-title">
+                    <i class="fas fa-tasks"></i>
+                    我的保研计划
+                </h2>
+                
+                <table class="plan-table">
+                    <thead>
+                        <tr>
+                            <th width="40%">目标</th>
+                            <th width="20%">预计完成时间</th>
+                            <th width="20%">完成状态</th>
+                            <th width="20%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planTableBody">
+                        <!-- 计划行将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+                
+                <button class="add-plan-btn" id="addPlanBtn">
+                    <i class="fas fa-plus"></i>
+                    添加新计划
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>信息学院保研政策页面 &copy; 2024 版权所有</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const planTableBody = document.getElementById('planTableBody');
+            const addPlanBtn = document.getElementById('addPlanBtn');
+            
+            // 初始示例数据
+            let plans = [
+                { id: 1, goal: "完成GPA提升至3.8", date: "2024-06-30", status: "in-progress" },
+                { id: 2, goal: "参加全国大学生数学建模竞赛", date: "2024-05-15", status: "completed" },
+                { id: 3, goal: "准备英语六级考试", date: "2024-09-01", status: "not-started" },
+                { id: 4, goal: "完成科研项目论文", date: "2024-07-31", status: "in-progress" }
+            ];
+            
+            // 渲染计划表格
+            function renderPlans() {
+                planTableBody.innerHTML = '';
+                
+                if (plans.length === 0) {
+                    planTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 30px; color: #666;">
+                                <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 15px; display: block; opacity: 0.5;"></i>
+                                暂无计划，点击"添加新计划"开始制定您的保研计划
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                plans.forEach(plan => {
+                    const statusText = getStatusText(plan.status);
+                    const statusClass = getStatusClass(plan.status);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <input type="text" class="goal-input" value="${plan.goal}" data-id="${plan.id}">
+                        </td>
+                        <td>
+                            <input type="date" class="date-input" value="${plan.date}" data-id="${plan.id}">
+                        </td>
+                        <td>
+                            <select class="status-select" data-id="${plan.id}">
+                                <option value="not-started" ${plan.status === 'not-started' ? 'selected' : ''}>未开始</option>
+                                <option value="in-progress" ${plan.status === 'in-progress' ? 'selected' : ''}>进行中</option>
+                                <option value="completed" ${plan.status === 'completed' ? 'selected' : ''}>已完成</option>
+                            </select>
+                            <span class="${statusClass}" style="margin-left: 8px;">${statusText}</span>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <button class="action-btn save-btn" data-id="${plan.id}">
+                                    <i class="fas fa-save"></i> 保存
+                                </button>
+                                <button class="action-btn delete-btn" data-id="${plan.id}">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    planTableBody.appendChild(row);
+                });
+                
+                // 添加事件监听
+                addEventListeners();
+            }
+            
+            // 获取状态文本
+            function getStatusText(status) {
+                switch(status) {
+                    case 'completed': return '已完成';
+                    case 'in-progress': return '进行中';
+                    case 'not-started': return '未开始';
+                    default: return '未开始';
+                }
+            }
+            
+            // 获取状态类名
+            function getStatusClass(status) {
+                switch(status) {
+                    case 'completed': return 'status-completed';
+                    case 'in-progress': return 'status-in-progress';
+                    case 'not-started': return 'status-not-started';
+                    default: return 'status-not-started';
+                }
+            }
+            
+            // 添加事件监听
+            function addEventListeners() {
+                // 保存按钮点击事件
+                document.querySelectorAll('.save-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = parseInt(this.getAttribute('data-id'));
+                        savePlan(id);
+                    });
+                });
+                
+                // 删除按钮点击事件
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = parseInt(this.getAttribute('data-id'));
+                        deletePlan(id);
+                    });
+                });
+                
+                // 状态选择变化事件
+                document.querySelectorAll('.status-select').forEach(select => {
+                    select.addEventListener('change', function() {
+                        const id = parseInt(this.getAttribute('data-id'));
+                        const row = this.closest('tr');
+                        const statusSpan = row.querySelector('span');
+                        const statusClass = getStatusClass(this.value);
+                        const statusText = getStatusText(this.value);
+                        
+                        statusSpan.className = statusClass;
+                        statusSpan.textContent = statusText;
+                    });
+                });
+            }
+            
+            // 保存计划
+            function savePlan(id) {
+                const goalInput = document.querySelector(`.goal-input[data-id="${id}"]`);
+                const dateInput = document.querySelector(`.date-input[data-id="${id}"]`);
+                const statusSelect = document.querySelector(`.status-select[data-id="${id}"]`);
+                
+                const goal = goalInput.value.trim();
+                const date = dateInput.value;
+                const status = statusSelect.value;
+                
+                if (!goal) {
+                    alert('请输入计划目标');
+                    goalInput.focus();
+                    return;
+                }
+                
+                if (!date) {
+                    alert('请选择预计完成时间');
+                    dateInput.focus();
+                    return;
+                }
+                
+                // 更新计划数据
+                const planIndex = plans.findIndex(p => p.id === id);
+                if (planIndex !== -1) {
+                    plans[planIndex] = {
+                        ...plans[planIndex],
+                        goal,
+                        date,
+                        status
+                    };
+                }
+                
+                alert('计划保存成功！');
+            }
+            
+            // 删除计划
+            function deletePlan(id) {
+                if (confirm('确定要删除这个计划吗？')) {
+                    plans = plans.filter(p => p.id !== id);
+                    renderPlans();
+                    alert('计划删除成功！');
+                }
+            }
+            
+            // 添加新计划
+            addPlanBtn.addEventListener('click', function() {
+                const newId = plans.length > 0 ? Math.max(...plans.map(p => p.id)) + 1 : 1;
+                
+                plans.unshift({
+                    id: newId,
+                    goal: '',
+                    date: '',
+                    status: 'not-started'
+                });
+                
+                renderPlans();
+                
+                // 聚焦到新添加的输入框
+                setTimeout(() => {
+                    const newGoalInput = document.querySelector(`.goal-input[data-id="${newId}"]`);
+                    if (newGoalInput) {
+                        newGoalInput.focus();
+                    }
+                }, 100);
+            });
+            
+            // 初始渲染
+            renderPlans();
+        });
+    </script>
+</body>
+</html>
