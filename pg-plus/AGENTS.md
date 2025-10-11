@@ -1,32 +1,30 @@
-# AI Contributor Guidelines
+# Repository Guidelines
 
-Welcome, AI teammates. This document sets boundaries for automated contributions across the PG-Plus monorepo.
+## Project Structure & Module Organization
+- `backend/` contains the Django project; apps live in `backend/apps/` with per-app tests under `tests/`. Shared settings and Celery config sit in `backend/core/`, and uploads land in `backend/media/`.
+- `web-admin/`, `web-student/`, and `web-teacher/` are Vite + Vue 3 frontends. Ship features inside each `src/` tree and keep `web-student`'s static HTML limited to marketing entry points.
+- Infra assets reside in `spec/openapi.yaml`, `scripts/`, and `nginx/`; update these together when API gateways or deploy flows change.
 
-## Scope & Ownership
-- Stay within existing folders unless architecture reviews approve new ones.
-- Touch only stubs and scaffolding until product owners green-light business logic.
-- When in doubt about feature intent, **ask for clarification** before coding.
+## Build, Test, and Development Commands
+- `make setup` installs Python requirements and runs `npm install` for all frontends.
+- `make backend-serve` applies migrations and starts Django on `0.0.0.0:8000`; load env values from `.env` seeded via `.env.example`.
+- `make frontend-dev`, `make frontend-dev-admin`, and `make frontend-dev-teacher` start the student, admin, or teacher Vite servers (equivalent to `npm run dev -- --open` in each package); Celery workers use `make celery` and the scheduler uses `make celery-beat` once Redis is available.
 
-## Coding Standards
-- Python: follow PEP 8, 4-space indents, type hints when practical, docstrings for public interfaces.
-- Vue/TS: composition API with `<script setup>`, keep hash router (`createWebHashHistory`) unless explicitly replaced.
-- Keep assets and routes `/gsapp/`-aware; admin SPA must remain under `/gsapp/admin/`.
-- Ensure axios clients read `import.meta.env.VITE_API_BASE` and default to `/gsapp/api/v1`.
+## Coding Style & Naming Conventions
+- Run Black (88 cols), isort, and Flake8 on Python modules. Use `snake_case` modules, `PascalCase` classes, `UPPER_SNAKE` constants, and annotate public interfaces.
+- Vue + TypeScript relies on ESLint + Prettier (2-space, single quotes). Name components in PascalCase, composables `useThing`, Pinia stores `useThingStore`, and keep Axios pointed at `import.meta.env.VITE_API_BASE` (default `/gsapp/api/v1`).
 
-## Commit Discipline
-- Prefer conventional commits (e.g., `feat:`, `fix:`, `chore:`). Group related changes.
-- Reference issue IDs when available.
-- Do not auto-format unrelated files; keep diffs focused.
+## Testing Guidelines
+- Place backend tests beside their app in `tests/`, name files `test_*.py`, run `python -m pytest backend`, and mark ORM access with `pytest.mark.django_db`.
+- Frontend changes should add Vitest specs near the component (`src/__tests__/`) and keep `npm run lint` plus `npm run typecheck` clean.
+- Note manual QA steps in PRs until automated coverage reaches the surface.
 
-## Testing Expectations
-- Backend: add or update unit tests alongside new endpoints or serializers; run `make lint` + `pytest` once they exist.
-- Frontend: supply component tests when business logic arrives; keep `npm run lint` and `npm run typecheck` green.
-- Document manual QA steps for notable UI or infrastructure changes.
+## Commit & Pull Request Guidelines
+- Write imperative, scope-tagged commits (e.g., `backend: add scoring weights api`) and keep diffs focused; rerun formatters before staging.
+- PRs must describe intent, reference tickets, list verification commands (`make backend-serve`, `python -m pytest backend`, `npm run lint`, `npm run typecheck`), and attach screenshots or payload samples for UI/API changes.
+- Flag migrations, new env vars, or Celery schedule updates so deploys can be planned.
 
-## Review & Safety
-- Never ship secrets or real credentials. Use env placeholders only.
-- Flag architectural risks early (DB migrations, auth surfaces, storage providers).
-- Maintain OpenAPI spec accuracy once endpoints mature.
-- Respect the "no business logic in scaffold" rule—place TODOs and notes instead.
-
-Following these guardrails keeps AI assistance predictable and easy to review. Happy scaffolding!
+## Security & Configuration Tips
+- Copy `.env.example` to `.env`, keep secrets out of Git, and only expose browser env values with the `VITE_` prefix.
+- Apply DRF permission and tenancy checks to every new endpoint and emit audit events for state changes.
+- Keep `spec/openapi.yaml` aligned with backend updates so clients and nginx rules stay current.

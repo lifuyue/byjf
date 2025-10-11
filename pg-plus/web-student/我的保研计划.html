@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保研个人计划</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/plan.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+            <h1 class="page-title">我的保研计划</h1>
+        </div>
+        
+        <div class="content">
+            <div class="plan-section">
+                <h2 class="section-title">
+                    <i class="fas fa-tasks"></i>
+                    我的保研计划
+                </h2>
+                
+                <table class="plan-table">
+                    <thead>
+                        <tr>
+                            <th width="40%">目标</th>
+                            <th width="20%">预计完成时间</th>
+                            <th width="20%">完成状态</th>
+                            <th width="20%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planTableBody">
+                        <!-- 计划行将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+                
+                <button class="add-plan-btn" id="addPlanBtn">
+                    <i class="fas fa-plus"></i>
+                    添加新计划
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>信息学院保研政策页面 &copy; 2024 版权所有</p>
+        </div>
+    </div>
+
+    <script src="scripts/plan.js"></script>
+</body>
+</html>

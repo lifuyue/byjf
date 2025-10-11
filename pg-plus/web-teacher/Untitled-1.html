@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>保研加分小助手学生端</title>
+    <title>保研加分小助手教师端</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <link rel="stylesheet" href="styles/common.css">
-    <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="styles/dashboard.css">
 </head>
 <body>
     <div class="header-container">
-        <h1 class="page-title">保研加分小助手学生端</h1>
+        <h1 class="page-title">保研加分小助手教师端</h1>
         <div class="user-section">
             <button class="login-btn" id="loginBtn">登录</button>
             <a href="个人主页.html" class="user-info" id="userInfo">
@@ -30,35 +31,46 @@
     <div class="container">
         <div class="left-panel">
             <div class="header">
-                <h1>保研任务完成进度</h1>
-                <p>查看您的保研任务完成情况</p>
+                <h1>保研材料提交总人数</h1>
+                <p>待审核人数</p>
             </div>
             
             <div class="chart-container" id="chartContainer">
-                <div class="pie-chart" id="pieChart"></div>
+                <div class="pie-chart"></div>
                 <div class="chart-info">
-                    <div class="percentage" id="percentage">0%</div>
-                    <div class="completed-text">已完成</div>
+                     <div class="percentage">72 / 100</div>
+                    <div class="completed-text">已审核 / 总人数</div>
                 </div>
             </div>
             
+          <!--  
             <div class="progress-details" id="progressDetails">
                 <div class="progress-item">
-                    <div class="progress-value" id="earnedPoints">0</div>
+                    <div class="progress-value">108</div>
                     <div class="progress-label">已获加分</div>
                 </div>
                 <div class="progress-item">
-                    <div class="progress-value" id="remainingPoints">0</div>
+                    <div class="progress-value">42</div>
                     <div class="progress-label">剩余加分</div>
                 </div>
                 <div class="progress-item">
-                    <div class="progress-value" id="totalPoints">150</div>
+                    <div class="progress-value">150</div>
                     <div class="progress-label">目标加分</div>
                 </div>
             </div>
-            
+            -->
+           
             <div class="action-buttons">
-                <a href="学校保研政策.html" class="action-card" id="policyCard">
+                <a href="审核界面.html" class="action-card">
+                    <div class="icon-container">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>进入审核</h3>
+                        <p>进入学生材料审核界面</p>
+                    </div>
+                </a>
+                <a href="学校保研政策.html" class="action-card">
                     <div class="icon-container">
                         <i class="fas fa-file-alt"></i>
                     </div>
@@ -67,34 +79,13 @@
                         <p>查看学校最新的保研政策和要求</p>
                     </div>
                 </a>
-                
-                <a href="专业排名.html" class="action-card" id="rankingCard">
+                <a href="专业排名（教师端）.html" class="action-card" id="rankingCard">
                     <div class="icon-container">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="card-content">
                         <h3>专业排名</h3>
-                        <p>查看您在专业内的排名情况</p>
-                    </div>
-                </a>
-                
-                <a href="我的保研计划.html" class="action-card" id="planCard">
-                    <div class="icon-container">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3>我的保研计划</h3>
-                        <p>制定和管理您的保研计划</p>
-                    </div>
-                </a>
-                
-                <a href="新增竞赛成绩.html" class="action-card" id="competitionCard">
-                    <div class="icon-container">
-                        <i class="fas fa-plus-circle"></i>
-                    </div>
-                    <div class="card-content">
-                        <h3>新增竞赛成绩</h3>
-                        <p>添加您的最新竞赛成绩</p>
+                        <p>查看专业内的排名情况</p>
                     </div>
                 </a>
             </div>
@@ -102,23 +93,13 @@
         
         <div class="right-panel">
             <div class="earned-points">
-                <!-- 修改：添加了section-header和查看更多链接 -->
-                <div class="section-header" id="earnedPointsHeader">
-                    <h2 class="section-title">已经获得的加分项</h2>
-                    <a href="已经获得的加分项.html" class="view-more-link" id="viewMoreLink">
-                        查看更多 
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-                <div class="items-list" id="earnedPointsList">
-                    <!-- 内容将通过JavaScript动态添加 -->
-                </div>
-            </div>    
+                <h2 class="section-title">已经审批的学生</h2>
+                <div class="items-list" id="earnedPointsList"></div>
+            </div>
+            
             <div class="recommended-competitions">
-                <h2 class="section-title">推荐的竞赛加分</h2>
-                <div class="items-list" id="recommendedCompetitionsList">
-                    <!-- 内容将通过JavaScript动态添加 -->
-                </div>
+                <h2 class="section-title">待审批的学生</h2>
+                <div class="items-list" id="recommendedCompetitionsList"></div>
             </div>
         </div>
     </div>
@@ -137,6 +118,23 @@
             </div>
         </div>
     </div>
-    <script src="scripts/index.js"></script>
+
+    <!-- 登录表单结构 -->
+    <div class="login-box">
+        <h2>欢迎回来</h2>
+        <form id="loginForm">
+            <div>
+                <input type="text" id="username" placeholder="用户名" required>
+            </div>
+            <div>
+                <input type="password" id="password" placeholder="密码" required>
+            </div>
+            <button type="submit">登录</button>
+        </form>
+        <div id="loginError" class="login-error"></div>
+    </div>
+
+    
+    <script src="scripts/dashboard.js"></script>
 </body>
 </html>

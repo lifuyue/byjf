@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>已审核学生 - 保研材料审核系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/reviewed-students.css">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar__title">审核管理</div>
+            <nav class="sidebar__menu">
+                <a href="审核界面.html" class="sidebar-link">
+                    <i class="fa fa-list-ul"></i>
+                    <span>待审核列表</span>
+                </a>
+                <a href="已审核学生.html" class="sidebar-link sidebar-link--active">
+                    <i class="fa fa-check-circle"></i>
+                    <span>已审核学生</span>
+                </a>
+                <a href="审核记录.html" class="sidebar-link">
+                    <i class="fa fa-file-text-o"></i>
+                    <span>审核记录</span>
+                </a>
+            </nav>
+            <a href="审核界面.html" class="sidebar__home-button">返回主页</a>
+            <div class="sidebar__progress">
+                <div class="sidebar__progress-label">审核进度</div>
+                <div class="sidebar__progress-track">
+                    <div class="sidebar__progress-bar sidebar__progress-bar--80"></div>
+                </div>
+                <div class="sidebar__progress-stats">
+                    <span>待审核 5</span>
+                    <span>已完成 20</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="card">
+                <h1 class="card__title">已审核学生</h1>
+                <div class="table-wrapper">
+                    <table class="student-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>学号</th>
+                                <th>学院</th>
+                                <th>专业</th>
+                                <th>审核时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>张三</td>
+                                <td>202101001</td>
+                                <td>计算机科学与技术学院</td>
+                                <td>计算机科学与技术</td>
+                                <td>2023-09-15</td>
+                                <td>
+                                    <a href="#" class="table-link">查看详情</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>李四</td>
+                                <td>202101002</td>
+                                <td>计算机科学与技术学院</td>
+                                <td>计算机科学与技术</td>
+                                <td>2023-09-14</td>
+                                <td>
+                                    <a href="#" class="table-link">查看详情</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

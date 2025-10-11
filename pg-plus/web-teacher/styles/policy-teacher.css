@@ -1,0 +1,160 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-out;
+    min-height: 80vh;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    padding: 25px 30px;
+    background: linear-gradient(to right, #4a6fa5, #2c3e50);
+    color: white;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-3px);
+}
+
+.page-title {
+    flex: 1;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-right: 100px; /* 平衡返回按钮的宽度 */
+}
+
+.content {
+    padding: 40px;
+    min-height: 500px;
+}
+
+.policy-section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eaeaea;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: #4a6fa5;
+}
+
+.policy-content {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    line-height: 1.7;
+    color: #444;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.policy-content p {
+    margin-bottom: 15px;
+}
+
+.policy-content ul {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.policy-content li {
+    margin-bottom: 8px;
+}
+
+.highlight {
+    background-color: #fff9e6;
+    padding: 15px;
+    border-left: 4px solid #ffc107;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.footer {
+    padding: 20px;
+    text-align: center;
+    background: #f8f9fa;
+    color: #666;
+    font-size: 14px;
+    border-top: 1px solid #eaeaea;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .page-title {
+        margin-right: 0;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .policy-content {
+        padding: 15px;
+    }
+}
+
+.policy-formula {
+    text-align: center;
+    font-weight: 700;
+    margin: 15px 0;
+}
+
+.policy-signature {
+    text-align: right;
+    margin-top: 20px;
+    font-style: italic;
+}
+

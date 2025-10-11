@@ -1,0 +1,57 @@
+.shadow-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.text-success {
+    color: #52c41a;
+}
+
+.text-warning {
+    color: #faad14;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #222;
+}
+
+.header-brand__icon {
+    margin-right: 8px;
+    color: #1677ff;
+    font-size: 32px;
+}
+
+.menu-icon-active {
+    color: #165dff;
+    margin-right: 10px;
+}
+
+.menu-link-active-text {
+    color: #165dff;
+}
+
+.progress-track {
+    background: #eee;
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.progress-track--wide {
+    width: 90%;
+}
+
+.progress-bar {
+    background: #165dff;
+    height: 8px;
+    border-radius: 8px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar--68 {
+    width: 68%;
+}

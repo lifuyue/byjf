@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>审核记录 - 保研材料审核系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/review-log.css">
+</head>
+<body class="font-inter bg-neutral-100 text-neutral-700 min-h-screen flex flex-col">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-30">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-2">
+          <!-- 标题 -->
+          <div class="header-brand">
+            <i class="fa fa-graduation-cap header-brand__icon"></i>
+            保研材料审核系统
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <img src="https://picsum.photos/id/1005/200/200" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm">
+          <span class="hidden md:inline text-sm font-medium">王教授</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体内容 -->
+  <main class="flex-1 container mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
+    <!-- 左侧导航 -->
+    <aside class="w-full md:w-64 lg:w-72 shrink-0">
+      <div class="bg-white rounded-lg shadow-card p-4 sticky top-20">
+        <nav class="space-y-1">
+          <p class="text-xs uppercase text-neutral-400 font-medium mb-2 px-3">审核管理</p>
+          <a href="审核界面.html" class="flex items-center space-x-3 px-3 py-2 rounded-md text-neutral-600 hover:bg-primary/10 hover:text-primary transition-colors">
+            <i class="fa fa-list-ul w-5 text-center"></i>
+            <span>待审核列表</span>
+          </a>
+          <a href="已审核学生.html" class="flex items-center space-x-3 px-3 py-2 rounded-md text-neutral-600 hover:bg-primary/10 hover:text-primary transition-colors">
+            <i class="fa fa-check-circle-o w-5 text-center"></i>
+            <span>已审核学生</span>
+          </a>
+          <a href="审核中项目.html" class="flex items-center space-x-3 px-3 py-2 rounded-md text-neutral-600 hover:bg-primary/10 hover:text-primary transition-colors">
+            <i class="fa fa-clock-o w-5 text-center"></i>
+            <span>审核中项目</span>
+          </a>
+          <!-- 菜单项 -->
+          <a href="审核记录.html" class="flex items-center space-x-3 px-3 py-2 rounded-md bg-primary/10 text-primary font-medium">
+            <i class="fa fa-file-text-o menu-icon-active"></i>
+            <span class="menu-link-active-text">审核记录</span>
+          </a>
+        </nav>
+        <!-- 审核统计 -->
+        <div class="mt-6 pt-4 border-t border-neutral-200">
+          <h3 class="text-sm font-medium text-neutral-700 mb-3">审核进度</h3>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-neutral-500">总体进度</span>
+                <span class="font-medium">68%</span>
+              </div>
+              <!-- 进度条 -->
+              <div class="progress-track progress-track--wide">
+                <div class="progress-bar progress-bar--68"></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="bg-neutral-100 rounded-lg p-3">
+                <p class="text-sm text-neutral-500">待审核</p>
+                <p class="text-lg font-bold text-neutral-700">14</p>
+              </div>
+              <div class="bg-neutral-100 rounded-lg p-3">
+                <p class="text-sm text-neutral-500">已完成</p>
+                <p class="text-lg font-bold text-success">32</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    
+
+    <!-- 右侧内容区 -->
+    <section class="flex-1">
+      <div class="bg-white rounded-lg shadow-card p-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-neutral-700">审核记录</h1>
+            <p class="text-neutral-500 mt-1">查看所有学生的审核操作历史</p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <div class="relative">
+              <input type="text" placeholder="搜索学生姓名或学号" class="pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all w-full md:w-64">
+              <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+            </div>
+            <button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+              <i class="fa fa-filter"></i>
+              <span>筛选</span>
+            </button>
+          </div>
+        </div>
+        <!-- 审核记录表格 -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-neutral-200">
+            <thead>
+              <tr>
+                <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">时间</th>
+                <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">学生姓名</th>
+                <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">学号</th>
+                <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">操作人</th>
+                <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">操作类型</th>
+                <th class="px-4 py-3 bg-neutral-50 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">备注</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-neutral-200">
+              <tr>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">2023-09-18 09:15:47</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">张明</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">2021012345</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">李老师</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-success">审核通过</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">材料齐全，符合条件</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">2023-09-17 15:22:10</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">李四</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">202101002</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">王教授</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-warning">退回修改</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-700">缺少成绩单</td>
+              </tr>
+              <!-- 可继续添加更多记录 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

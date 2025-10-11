@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>已经获得的加分项 - 保研加分小助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/earned.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部导航 -->
+        <div class="header">
+            <h1 class="page-title">已经获得的加分项</h1>
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">总加分项数量</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">133</div>
+                <div class="stat-label">累计加分</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">国家级奖项</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">省级奖项</div>
+            </div>
+        </div>
+        
+        <!-- 筛选和搜索 -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="搜索加分项...">
+                </div>
+                <select class="filter-select" id="levelFilter">
+                    <option value="all">所有等级</option>
+                    <option value="national">国家级</option>
+                    <option value="provincial">省级</option>
+                    <option value="municipal">市级</option>
+                    <option value="school">校级</option>
+                </select>
+                <select class="filter-select" id="yearFilter">
+                    <option value="all">所有年份</option>
+                    <option value="2024">2024年</option>
+                    <option value="2023">2023年</option>
+                    <option value="2022">2022年</option>
+                    <option value="2021">2021年</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- 加分项列表 -->
+        <div class="items-container">
+            <div class="items-header">
+                <h2 class="items-title">所有加分项</h2>
+                <div class="items-count">共12个项目</div>
+            </div>
+            
+            <div class="items-list" id="itemsList">
+                <!-- 项目1 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生数学建模竞赛</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年9月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+15分</div>
+                </div>
+                
+                <!-- 项目2 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">"挑战杯"全国大学生课外学术科技作品竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年6月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+12分</div>
+                </div>
+                
+                <!-- 项目3 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">ACM国际大学生程序设计竞赛</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年11月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+10分</div>
+                </div>
+                
+                <!-- 项目4 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">学术论文发表</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年12月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+8分</div>
+                </div>
+                
+                <!-- 项目5 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生英语竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年5月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+10分</div>
+                </div>
+                
+                <!-- 项目6 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">"互联网+"大学生创新创业大赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年4月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+15分</div>
+                </div>
+                
+                <!-- 项目7 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生机器人大赛</h3>
+                            <span class="item-level level-national">国奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年7月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+12分</div>
+                </div>
+                
+                <!-- 项目8 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">全国大学生电子设计竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年8月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+15分</div>
+                </div>
+                
+                <!-- 项目9 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">校级程序设计竞赛</h3>
+                            <span class="item-level level-school">校级</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年3月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+5分</div>
+                </div>
+                
+                <!-- 项目10 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">市级科技创新大赛</h3>
+                            <span class="item-level level-municipal">市级</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2023年2月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+8分</div>
+                </div>
+                
+                <!-- 项目11 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">省级数学竞赛</h3>
+                            <span class="item-level level-provincial">省奖</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2022年11月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+10分</div>
+                </div>
+                
+                <!-- 项目12 -->
+                <div class="item-card">
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h3 class="item-title">校级科研项目</h3>
+                            <span class="item-level level-school">校级</span>
+                        </div>
+                        <div class="item-details">
+                            <div class="item-date">
+                                <i class="far fa-calendar"></i>
+                                2022年10月
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-points">+6分</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/earned.js"></script>
+</body>
+</html>

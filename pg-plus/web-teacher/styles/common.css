@@ -1,0 +1,28 @@
+:root {
+  --color-primary: #165dff;
+  --color-primary-dark: #1d2d50;
+  --color-accent: #36cfc9;
+  --color-text: #1d2129;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
+}

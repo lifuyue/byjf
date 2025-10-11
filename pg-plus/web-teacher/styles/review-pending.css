@@ -1,0 +1,27 @@
+.shadow-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-card-hover:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.logo-icon {
+    color: #1677ff;
+    font-size: 32px;
+}
+
+.nav-icon-active {
+    color: #1677ff;
+}
+
+.progress-bar {
+    background: #1677ff;
+    height: 8px;
+    border-radius: 8px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar--68 {
+    width: 68%;
+}

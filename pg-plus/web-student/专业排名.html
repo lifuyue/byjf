@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专业排名</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/common.css">
+    <link rel="stylesheet" href="styles/ranking.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                返回主页
+            </a>
+            <h1 class="page-title">专业排名</h1>
+        </div>
+        
+        <div class="content">
+            <div class="ranking-section">
+                <div class="section-title">
+                    <div>
+                        <i class="fas fa-chart-line"></i>
+                        信息科学与技术专业排名
+                    </div>
+                    <div class="export-buttons">
+                        <button class="export-btn" id="exportExcel">
+                            <i class="fas fa-file-excel"></i>
+                            导出Excel
+                        </button>
+                        <button class="export-btn" id="exportWord">
+                            <i class="fas fa-file-word"></i>
+                            导出Word
+                        </button>
+                    </div>
+                </div>
+                
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th width="80">排名</th>
+                            <th>姓名</th>
+                            <th width="120">学号</th>
+                            <th width="120">GPA</th>
+                            <th width="120">竞赛加分</th>
+                            <th width="120">总分</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingTableBody">
+                        <!-- 排名数据将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+                
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalStudents">15</div>
+                        <div class="stat-label">专业总人数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgGPA">3.72</div>
+                        <div class="stat-label">平均GPA</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgPoints">8.4</div>
+                        <div class="stat-label">平均加分</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentUserRank">5</div>
+                        <div class="stat-label">您的排名</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>专业排名页面 &copy; 2024 版权所有</p>
+        </div>
+    </div>
+
+    <script src="scripts/ranking.js"></script>
+</body>
+</html>
