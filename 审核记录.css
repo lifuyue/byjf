@@ -1,0 +1,6 @@
+/* 提取自 审核记录.html 的内嵌样式 */
+.shadow-card { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.text-success { color: #52C41A; }
+.text-warning { color: #FAAD14; }
+
+/* 注意：页面中还有若干内联样式（style="...") 未在此移动。如需我可以把它们也统一提取为类并替换。 */
