@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 
 class RulePlaceholderView(APIView):
-    """Placeholder for rules configuration endpoints."""
+    """规则配置端点的占位视图。"""
 
     def get(self, request, *args, **kwargs):
-        return Response({"detail": "TODO: list rules"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        return Response({"detail": "TODO：列出规则"}, status=status.HTTP_501_NOT_IMPLEMENTED)

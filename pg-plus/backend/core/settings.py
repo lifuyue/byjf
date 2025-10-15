@@ -1,4 +1,4 @@
-"""Django settings for PG-Plus scaffold."""
+"""PG-Plus 脚手架的 Django 配置。"""
 from __future__ import annotations
 
 import os
@@ -14,7 +14,7 @@ SECRET_KEY = os.environ.get("PG_PLUS_SECRET_KEY", get_random_secret_key())
 DEBUG = os.environ.get("PG_PLUS_DEBUG", "False").lower() in {"1", "true", "yes"}
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("PG_PLUS_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host]
 
-# Applications
+# 应用列表
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -32,6 +32,9 @@ INSTALLED_APPS = [
     "apps.scoringapp",
     "apps.policiesapp",
 ]
+
+# 使用自定义用户模型（scoringapp.Student）作为项目的认证用户模型
+AUTH_USER_MODEL = "apps.scoringapp.Student"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -65,7 +68,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
-# Database
+# 数据库配置
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -79,9 +82,9 @@ DATABASES = {
         },
     }
 }
-# TODO: For quick prototypes developers may swap to SQLite; see README for guidance.
+# TODO：如需快速原型开发，开发者可切换为 SQLite，详见 README。
 
-# Password validation
+# 密码校验
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -89,13 +92,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internationalization
+# 国际化设置
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Shanghai"
 USE_I18N = True
 USE_TZ = True
 
-# Static and media files are served under /gsapp/ by Nginx
+# 静态文件和媒体文件由 Nginx 挂载在 /gsapp/ 路径下
 STATIC_URL = "/gsapp/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/gsapp/media/"
@@ -103,7 +106,7 @@ MEDIA_ROOT = Path(os.environ.get("PG_PLUS_MEDIA_ROOT", BASE_DIR / "media")).reso
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# DRF setup focuses on JWT-first workflow
+# DRF 配置，优先采用 JWT 认证流程
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -122,22 +125,22 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get("PG_PLUS_CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",") if origin]
 CORS_ALLOW_CREDENTIALS = True
 
-# Celery / Redis
+# Celery / Redis 配置
 CELERY_BROKER_URL = os.environ.get("PG_PLUS_CELERY_BROKER_URL", "redis://127.0.0.1:6379/1")
 CELERY_RESULT_BACKEND = os.environ.get("PG_PLUS_CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/2")
 CELERY_TASK_DEFAULT_QUEUE = "pg_plus_default"
 
-# Storage placeholders; MinIO/OSS wiring lands in adapters later.
+# 文件存储占位符；MinIO/OSS 适配将在后续适配器中实现。
 DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
-# JWT placeholders derived from environment
+# JWT 配置项由环境变量提供
 SIMPLE_JWT = {
     "SIGNING_KEY": os.environ.get("PG_PLUS_JWT_SIGNING_KEY", SECRET_KEY),
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get("PG_PLUS_JWT_ACCESS_LIFETIME_MINUTES", "30"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("PG_PLUS_JWT_REFRESH_LIFETIME_DAYS", "7"))),
 }
 
-# CAS / OIDC switchboard lives here when implemented.
+# CAS / OIDC 相关配置预留，待后续实现。
 PG_PLUS_CAS_SERVER_URL = os.environ.get("PG_PLUS_CAS_SERVER_URL", "")
 PG_PLUS_OIDC_ISSUER = os.environ.get("PG_PLUS_OIDC_ISSUER", "")
 

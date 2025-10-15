@@ -1,4 +1,4 @@
-"""Models for rulesapp."""
+"""rulesapp 的模型。"""
 from __future__ import annotations
 
-# TODO: Define rule configuration models.
+# TODO：定义规则配置模型。
