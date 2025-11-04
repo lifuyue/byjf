@@ -1,17 +1,18 @@
-.PHONY: setup backend-serve frontend-dev frontend-dev-admin frontend-dev-teacher fmt lint celery beat openapi
+.PHONY: setup backend-serve frontend-dev frontend-dev-admin frontend-dev-teacher fmt lint celery celery-beat openapi
 
-PYTHON ?= python3
+UV ?= uv
 NODE ?= npm
+NPM_INSTALL_FLAGS ?= install --no-audit --no-fund --loglevel=error
 
 setup:
-	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install -r backend/requirements.txt
-	cd web-student && $(NODE) install
-	cd web-admin && $(NODE) install
-	cd web-teacher && $(NODE) install
+	$(UV) sync --all-groups
+	cd web-student && $(NODE) $(NPM_INSTALL_FLAGS)
+	cd web-admin && $(NODE) $(NPM_INSTALL_FLAGS)
+	cd web-teacher && $(NODE) $(NPM_INSTALL_FLAGS)
 
 backend-serve:
-	cd backend && $(PYTHON) manage.py migrate --noinput && $(PYTHON) manage.py runserver 0.0.0.0:8000
+	$(UV) run python backend/manage.py migrate --noinput
+	$(UV) run python backend/manage.py runserver 0.0.0.0:8000
 
 frontend-dev:
 	cd web-student && $(NODE) run dev -- --open
@@ -23,20 +24,20 @@ frontend-dev-teacher:
 	cd web-teacher && $(NODE) run dev -- --open
 
 celery:
-	cd backend && celery -A core worker -l info
+	$(UV) run celery -A core worker -l info
 
 celery-beat:
-	cd backend && celery -A core beat -l info
+	$(UV) run celery -A core beat -l info
 
 fmt:
-	$(PYTHON) -m black backend || true
-	$(PYTHON) -m isort backend || true
+	$(UV) run black backend || true
+	$(UV) run isort backend || true
 	cd web-student && $(NODE) run fmt || true
 	cd web-admin && $(NODE) run fmt || true
 	cd web-teacher && $(NODE) run fmt || true
 
 lint:
-	$(PYTHON) -m flake8 backend || true
+	$(UV) run flake8 backend || true
 	cd web-student && $(NODE) run lint || true
 	cd web-admin && $(NODE) run lint || true
 	cd web-teacher && $(NODE) run lint || true

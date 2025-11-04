@@ -39,6 +39,7 @@
 
    ## 环境要求
    - Python 3.11+
+   - uv 0.9+（用于 Python 依赖管理，需自行安装）
    - Node.js 18+
    - MySQL 8+
    - Redis 6+
@@ -54,6 +55,12 @@
    - 前端 `VITE_API_BASE=/gsapp/api/v1`
 
    > 可选：若本地原型阶段不使用 MySQL，可按 README 内联 TODO 将 `DATABASES['default']` 切换为 SQLite。
+
+   ## 依赖与运行方式（uv）
+   - 仓库根目录使用 uv 创建 `.venv/`，`make setup` 会执行 `uv sync --all-groups` 并在各前端目录安装 Node 依赖。
+   - 任意需要 Python 的命令请改用 `uv run ...`（例如 `uv run python backend/manage.py migrate`、`uv run celery ...`）。
+   - 若部署环境必须使用 `requirements.txt`，可在需要时运行 `uv export --frozen > backend/requirements.txt` 临时生成（文件不再长期保留）。
+   - 根目录附带 `.python-version`（3.11），方便 uv / pyenv / IDE 自动解析并定位 `.venv/bin/python3.11`。
 
    ## 项目结构
    - `backend/` – Django 工程，包含核心设置、Celery 启动以及空的领域应用（`authapp`、`filesapp`、`rulesapp`、`scoringapp`、`policiesapp`）。
@@ -73,15 +80,13 @@
       - 确保凭据与 `.env` 一致。
    3. **启动后端（开发模式）**
       ```bash
-      cd backend
-      python manage.py migrate  # 仅核心表
-      python manage.py runserver 0.0.0.0:8000
+      uv run python backend/manage.py migrate --noinput
+      uv run python backend/manage.py runserver 0.0.0.0:8000
       ```
    4. **运行 Celery 桩**
       ```bash
-      cd backend
-      celery -A core worker -l info
-      celery -A core beat -l info
+      uv run celery -A core worker -l info
+      uv run celery -A core beat -l info
       ```
    5. **启动前端**（hash 路由在开发环境下可保持 `/gsapp/` 路径正常）
       ```bash
@@ -113,7 +118,7 @@
    - 文件存储默认本地磁盘；`.env` 中预留 MinIO/OSS 凭据，供后端适配器后续使用。
 
    ## 代码风格与格式化
-   - 后端：`make fmt`/`make lint` 封装依赖 `black`、`isort`、`flake8`（请手动安装或扩展 `requirements-dev.txt`）。
+   - 后端：`make fmt`/`make lint` 已由 uv 安装并调用 `black`、`isort`、`flake8`。
    - 前端：在各自 web 目录内使用 `npm run lint`、`npm run fmt`、`npm run typecheck`。
    - Hash 路由可确保与 `/gsapp/` 挂载兼容；若需改为 history 模式，仅在具备服务端回退时进行。
 
