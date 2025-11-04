@@ -6,7 +6,7 @@ INSTALLED_APPS = [
 ]
 
 # 自定义用户模型
-AUTH_USER_MODEL = 'apps.scoringapp.Student'
+AUTH_USER_MODEL = 'scoringapp.Student'
 
 # 媒体文件配置
 MEDIA_URL = '/media/'

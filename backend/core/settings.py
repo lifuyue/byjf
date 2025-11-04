@@ -34,7 +34,7 @@ INSTALLED_APPS = [
 ]
 
 # 使用自定义用户模型（scoringapp.Student）作为项目的认证用户模型
-AUTH_USER_MODEL = "apps.scoringapp.Student"
+AUTH_USER_MODEL = "scoringapp.Student"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -143,4 +143,3 @@ SIMPLE_JWT = {
 # CAS / OIDC 相关配置预留，待后续实现。
 PG_PLUS_CAS_SERVER_URL = os.environ.get("PG_PLUS_CAS_SERVER_URL", "")
 PG_PLUS_OIDC_ISSUER = os.environ.get("PG_PLUS_OIDC_ISSUER", "")
-
