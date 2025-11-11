@@ -7,5 +7,8 @@ from . import views
 app_name = "filesapp"
 
 urlpatterns = [
-    path("placeholder/", views.FileUploadPlaceholderView.as_view(), name="placeholder"),
+    path("", views.FileListView.as_view(), name="list"),
+    path("upload/", views.FileUploadView.as_view(), name="upload"),
+    path("<uuid:pk>/", views.FileDetailView.as_view(), name="detail"),
+    path("<uuid:pk>/download/", views.FileDownloadView.as_view(), name="download"),
 ]
