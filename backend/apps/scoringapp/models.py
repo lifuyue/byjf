@@ -5,10 +5,28 @@ import os
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-# 配置分数上限（可以根据实际需求调整）
-A_SCORE_MAX = 80  # 学科成绩总分上限
-B_SCORE_MAX = 15  # 学术专长总分上限
-C_SCORE_MAX = 5  # 综合表现总分上限
+# 默认分数上限（可以在 rulesapp 中由管理员修改）
+DEFAULT_A_SCORE_MAX = 80  # 学科成绩总分上限
+DEFAULT_B_SCORE_MAX = 15  # 学术专长总分上限
+DEFAULT_C_SCORE_MAX = 5  # 综合表现总分上限
+
+from django.apps import apps
+
+def get_score_limits():
+    """从 rulesapp.ScoreLimit 中获取当前的分数上限；不存在时返回默认值。
+
+    返回 (a_max, b_max, c_max)
+    """
+    try:
+        ScoreLimit = apps.get_model('rulesapp', 'ScoreLimit')
+        if ScoreLimit:
+            obj = ScoreLimit.objects.first()
+            if obj:
+                return obj.a_max, obj.b_max, obj.c_max
+    except Exception:
+        # 当 rulesapp 未就绪或不存在时，回退到默认常量
+        pass
+    return DEFAULT_A_SCORE_MAX, DEFAULT_B_SCORE_MAX, DEFAULT_C_SCORE_MAX
 
 def proof_material_path(instance, filename):
     """生成证明材料的存储路径"""
@@ -67,8 +85,9 @@ class SubjectScore(models.Model):
         verbose_name_plural = "学科成绩"
 
     def save(self, *args, **kwargs):
-        # 计算学科成绩：(GPA/4)*a，确保不超过A_SCORE_MAX
-        self.calculated_score = min((self.gpa / 4) * self.a_value, A_SCORE_MAX)
+        # 计算学科成绩：(GPA/4)*a，确保不超过当前配置的 A_SCORE_MAX
+        a_max, _, _ = get_score_limits()
+        self.calculated_score = min((self.gpa / 4) * self.a_value, a_max)
         super().save(*args, **kwargs)
 
 class AcademicExpertise(models.Model):
@@ -116,13 +135,16 @@ def update_student_total_score(sender, instance,** kwargs):
     if hasattr(instance, 'student'):
         student = instance.student
         
-        # 计算学术专长总分（不超过B_SCORE_MAX）
-        academic_total = sum(exp.score for exp in student.academic_expertises.all())
-        academic_total = min(academic_total, B_SCORE_MAX)
-        
-        # 计算综合表现总分（不超过C_SCORE_MAX）
-        comprehensive_total = sum(cp.score for cp in student.comprehensive_performances.all())
-        comprehensive_total = min(comprehensive_total, C_SCORE_MAX)
+    # 获取当前配置的分数上限
+    _, b_max, c_max = get_score_limits()
+
+    # 计算学术专长总分（不超过 b_max）
+    academic_total = sum(exp.score for exp in student.academic_expertises.all())
+    academic_total = min(academic_total, b_max)
+
+    # 计算综合表现总分（不超过 c_max）
+    comprehensive_total = sum(cp.score for cp in student.comprehensive_performances.all())
+    comprehensive_total = min(comprehensive_total, c_max)
         
         # 获取学科成绩
         subject_score = student.subject_score.calculated_score if hasattr(student, 'subject_score') else 0

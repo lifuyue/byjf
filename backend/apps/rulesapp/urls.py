@@ -7,5 +7,7 @@ from . import views
 app_name = "rulesapp"
 
 urlpatterns = [
-    path("placeholder/", views.RulePlaceholderView.as_view(), name="placeholder"),
+    path("score-limits/", views.ScoreLimitView.as_view(), name="score_limits"),
+    path("policies/", views.PolicyUploadView.as_view(), name="policies"),
+    path("proof-review/", views.ProofReviewView.as_view(), name="proof_review"),
 ]
