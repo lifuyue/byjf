@@ -34,12 +34,15 @@ def proof_material_path(instance, filename):
     return f'proof_materials/{today.year}/{today.month}/{today.day}/{filename}'
 
 class StudentManager(BaseUserManager):
-    def create_user(self, username, student_id, password=None, **extra_fields):
+    def create_user(self, username, student_id, password=None, role: str = "student", **extra_fields):
         if not username:
             raise ValueError('必须提供用户名')
         if not student_id:
             raise ValueError('必须提供学号')
-        user = self.model(username=username, student_id=student_id,** extra_fields)
+        # 若 role 为 teacher 或 admin，则默认赋予 is_staff
+        if role in (Student.ROLE_TEACHER, Student.ROLE_ADMIN):
+            extra_fields.setdefault('is_staff', True)
+        user = self.model(username=username, student_id=student_id, role=role, ** extra_fields)
         user.set_password(password)  # 密码加密存储
         user.save(using=self._db)
         return user
@@ -47,11 +50,21 @@ class StudentManager(BaseUserManager):
     def create_superuser(self, username, student_id, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(username, student_id, password,** extra_fields)
+        # superuser 对应 admin 角色
+        return self.create_user(username, student_id, password, role='admin', **extra_fields)
 
 class Student(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True, verbose_name="用户名")
     student_id = models.CharField(max_length=20, unique=True, verbose_name="学号")
+    ROLE_STUDENT = 'student'
+    ROLE_TEACHER = 'teacher'
+    ROLE_ADMIN = 'admin'
+    ROLE_CHOICES = [
+        (ROLE_STUDENT, '学生'),
+        (ROLE_TEACHER, '教师'),
+        (ROLE_ADMIN, '管理员'),
+    ]
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_STUDENT, verbose_name='角色')
     total_score = models.FloatField(default=0, verbose_name="总分")
     ranking = models.IntegerField(default=0, verbose_name="排名")
     is_active = models.BooleanField(default=True)
@@ -75,7 +88,7 @@ class SubjectScore(models.Model):
     """学科成绩模型"""
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='subject_score', verbose_name="学生")
     gpa = models.FloatField(verbose_name="绩点")
-    a_value = models.FloatField(default=A_SCORE_MAX, verbose_name="学科成绩总分值")
+    a_value = models.FloatField(default=DEFAULT_A_SCORE_MAX, verbose_name="学科成绩总分值")
     calculated_score = models.FloatField(default=0, verbose_name="计算后的学科成绩")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -132,9 +145,10 @@ class ComprehensivePerformance(models.Model):
 def update_student_total_score(sender, instance,** kwargs):
     """当成绩相关模型更新时，自动更新学生总分和排名"""
     # 获取学生实例
-    if hasattr(instance, 'student'):
-        student = instance.student
-        
+    if not hasattr(instance, 'student'):
+        return
+    student = instance.student
+
     # 获取当前配置的分数上限
     _, b_max, c_max = get_score_limits()
 
@@ -145,20 +159,20 @@ def update_student_total_score(sender, instance,** kwargs):
     # 计算综合表现总分（不超过 c_max）
     comprehensive_total = sum(cp.score for cp in student.comprehensive_performances.all())
     comprehensive_total = min(comprehensive_total, c_max)
-        
-        # 获取学科成绩
-        subject_score = student.subject_score.calculated_score if hasattr(student, 'subject_score') else 0
-        
-        # 计算总分（确保不超过100分）
-        total_score = subject_score + academic_total + comprehensive_total
-        total_score = min(total_score, 100)
-        
-        # 更新学生总分
-        student.total_score = total_score
-        student.save(update_fields=['total_score'])
-        
-        # 重新计算所有学生的排名
-        recalculate_rankings()
+
+    # 获取学科成绩
+    subject_score = student.subject_score.calculated_score if hasattr(student, 'subject_score') else 0
+
+    # 计算总分（确保不超过100分）
+    total_score = subject_score + academic_total + comprehensive_total
+    total_score = min(total_score, 100)
+
+    # 更新学生总分
+    student.total_score = total_score
+    student.save(update_fields=['total_score'])
+
+    # 重新计算所有学生的排名
+    recalculate_rankings()
 
 def recalculate_rankings():
     """重新计算所有学生的排名"""

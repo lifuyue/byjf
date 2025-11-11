@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Student, SubjectScore, 
-    AcademicExpertise, ComprehensivePerformance,
-    A_SCORE_MAX, B_SCORE_MAX, C_SCORE_MAX
+    AcademicExpertise, ComprehensivePerformance, get_score_limits
 )
 
 class AcademicExpertiseSerializer(serializers.ModelSerializer):
@@ -25,8 +24,9 @@ class SubjectScoreSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """验证学科成绩相关数据"""
-        if 'a_value' in data and data['a_value'] != A_SCORE_MAX:
-            raise serializers.ValidationError(f"学科成绩总分值必须为{A_SCORE_MAX}分")
+        a_max, _, _ = get_score_limits()
+        if 'a_value' in data and data['a_value'] != a_max:
+            raise serializers.ValidationError(f"学科成绩总分值必须为{a_max}分")
         if 'gpa' in data and (data['gpa'] < 0 or data['gpa'] > 4):
             raise serializers.ValidationError("绩点必须在0到4之间")
         return data
@@ -36,11 +36,13 @@ class StudentSerializer(serializers.ModelSerializer):
     academic_expertises = AcademicExpertiseSerializer(many=True)
     comprehensive_performances = ComprehensivePerformanceSerializer(many=True)
     password = serializers.CharField(write_only=True)
+    role = serializers.ChoiceField(choices=Student.ROLE_CHOICES, default=Student.ROLE_STUDENT)
     
     class Meta:
         model = Student
         fields = [
             'id', 'username', 'password', 'student_id', 
+            'role',
             'total_score', 'ranking', 'subject_score',
             'academic_expertises', 'comprehensive_performances',
             'date_joined'
@@ -52,9 +54,10 @@ class StudentSerializer(serializers.ModelSerializer):
         subject_score_data = validated_data.pop('subject_score')
         academic_expertises_data = validated_data.pop('academic_expertises')
         comprehensive_performances_data = validated_data.pop('comprehensive_performances')
-        
         # 创建学生用户
-        student = Student.objects.create_user(** validated_data)
+        # validated_data 可能包含 role
+        role = validated_data.pop('role', Student.ROLE_STUDENT)
+        student = Student.objects.create_user(role=role, ** validated_data)
         
         # 创建学科成绩
         SubjectScore.objects.create(student=student, **subject_score_data)

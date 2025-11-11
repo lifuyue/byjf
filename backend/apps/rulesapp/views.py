@@ -56,8 +56,8 @@ class ProofReviewView(APIView):
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        # 仅允许 staff 或 superuser 操作（教师/管理员）
-        if not (user.is_staff or user.is_superuser):
+        # 仅允许 教师（role=='teacher'）/staff 或 superuser 操作（教师/管理员）
+        if not (getattr(user, 'role', None) == 'teacher' or user.is_staff or user.is_superuser):
             return Response({"detail": "权限不足"}, status=status.HTTP_403_FORBIDDEN)
 
         content_type_label = request.data.get("content_type")

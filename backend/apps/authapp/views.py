@@ -3,24 +3,34 @@ from __future__ import annotations
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
-class JwtLoginView(APIView):
-    """TODO: Implement JWT login wiring."""
-
-    authentication_classes: list = []
-    permission_classes: list = []
-
-    def post(self, request, *args, **kwargs):  # noqa: D401
-        """Return a placeholder response until auth is implemented."""
-        return Response({"detail": "TODO: implement login"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+# Use SimpleJWT views for token obtain/refresh
+class JwtLoginView(TokenObtainPairView):
+    """登录以换取 access/refresh token（使用 Simple JWT 的实现）。"""
+    pass
 
 
-class JwtRefreshView(APIView):
-    """TODO: Implement refresh token exchange."""
+class JwtRefreshView(TokenRefreshView):
+    """Refresh token endpoint."""
+    pass
 
-    authentication_classes: list = []
-    permission_classes: list = []
 
-    def post(self, request, *args, **kwargs):
-        return Response({"detail": "TODO: implement refresh"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+class CurrentUserView(APIView):
+    """返回当前登录用户的基本信息（包含 role）。"""
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        data = {
+            "id": user.id,
+            "username": getattr(user, "username", None),
+            "student_id": getattr(user, "student_id", None),
+            "role": getattr(user, "role", None),
+            "is_staff": user.is_staff,
+            "is_superuser": user.is_superuser,
+        }
+        return Response(data, status=status.HTTP_200_OK)

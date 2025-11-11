@@ -9,4 +9,5 @@ app_name = "authapp"
 urlpatterns = [
     path("login/", views.JwtLoginView.as_view(), name="login"),
     path("refresh/", views.JwtRefreshView.as_view(), name="refresh"),
+    path("me/", views.CurrentUserView.as_view(), name="me"),
 ]
