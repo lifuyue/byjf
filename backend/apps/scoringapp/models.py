@@ -1,40 +1,43 @@
-from django.db import models
+from __future__ import annotations
+
+from typing import Any
+
+from django.apps import apps
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.utils import timezone
-import os
+from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 # 默认分数上限（可以在 rulesapp 中由管理员修改）
 DEFAULT_A_SCORE_MAX = 80  # 学科成绩总分上限
 DEFAULT_B_SCORE_MAX = 15  # 学术专长总分上限
 DEFAULT_C_SCORE_MAX = 5  # 综合表现总分上限
 
-from django.apps import apps
-
-def get_score_limits():
+def get_score_limits() -> tuple[float, float, float]:
     """从 rulesapp.ScoreLimit 中获取当前的分数上限；不存在时返回默认值。
 
     返回 (a_max, b_max, c_max)
     """
     try:
         ScoreLimit = apps.get_model('rulesapp', 'ScoreLimit')
-        if ScoreLimit:
-            obj = ScoreLimit.objects.first()
-            if obj:
-                return obj.a_max, obj.b_max, obj.c_max
-    except Exception:
+    except LookupError:
         # 当 rulesapp 未就绪或不存在时，回退到默认常量
-        pass
+        return DEFAULT_A_SCORE_MAX, DEFAULT_B_SCORE_MAX, DEFAULT_C_SCORE_MAX
+
+    if ScoreLimit:
+        obj = ScoreLimit.objects.first()
+        if obj:
+            return float(obj.a_max), float(obj.b_max), float(obj.c_max)
     return DEFAULT_A_SCORE_MAX, DEFAULT_B_SCORE_MAX, DEFAULT_C_SCORE_MAX
 
-def proof_material_path(instance, filename):
+def proof_material_path(instance: models.Model, filename: str) -> str:
     """生成证明材料的存储路径"""
     today = timezone.now().date()
     return f'proof_materials/{today.year}/{today.month}/{today.day}/{filename}'
 
-class StudentManager(BaseUserManager):
-    def create_user(self, username, student_id, password=None, role: str = "student", **extra_fields):
+class StudentManager(BaseUserManager["Student"]):
+    def create_user(self, username: str, student_id: str, password: str | None = None, role: str = "student", **extra_fields: Any) -> "Student":
         if not username:
             raise ValueError('必须提供用户名')
         if not student_id:
@@ -42,12 +45,12 @@ class StudentManager(BaseUserManager):
         # 若 role 为 teacher 或 admin，则默认赋予 is_staff
         if role in (Student.ROLE_TEACHER, Student.ROLE_ADMIN):
             extra_fields.setdefault('is_staff', True)
-        user = self.model(username=username, student_id=student_id, role=role, ** extra_fields)
+        user = self.model(username=username, student_id=student_id, role=role, **extra_fields)
         user.set_password(password)  # 密码加密存储
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, student_id, password=None, **extra_fields):
+    def create_superuser(self, username: str, student_id: str, password: str | None = None, **extra_fields: Any) -> "Student":
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         # superuser 对应 admin 角色
@@ -81,7 +84,7 @@ class Student(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = "学生"
         ordering = ['-total_score']  # 按总分降序排列
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.username} ({self.student_id})"
 
 class SubjectScore(models.Model):
@@ -97,7 +100,7 @@ class SubjectScore(models.Model):
         verbose_name = "学科成绩"
         verbose_name_plural = "学科成绩"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         # 计算学科成绩：(GPA/4)*a，确保不超过当前配置的 A_SCORE_MAX
         a_max, _, _ = get_score_limits()
         self.calculated_score = min((self.gpa / 4) * self.a_value, a_max)
@@ -116,7 +119,7 @@ class AcademicExpertise(models.Model):
         verbose_name = "学术专长"
         verbose_name_plural = "学术专长"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         # 确保单条得分不为负
         self.score = max(0, self.score)
         super().save(*args, **kwargs)
@@ -134,7 +137,7 @@ class ComprehensivePerformance(models.Model):
         verbose_name = "综合表现"
         verbose_name_plural = "综合表现"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         # 确保单条得分不为负
         self.score = max(0, self.score)
         super().save(*args, **kwargs)
@@ -142,7 +145,7 @@ class ComprehensivePerformance(models.Model):
 @receiver(post_save, sender=SubjectScore)
 @receiver(post_save, sender=AcademicExpertise)
 @receiver(post_save, sender=ComprehensivePerformance)
-def update_student_total_score(sender, instance,** kwargs):
+def update_student_total_score(sender: type[models.Model], instance: models.Model, **kwargs: Any) -> None:
     """当成绩相关模型更新时，自动更新学生总分和排名"""
     # 获取学生实例
     if not hasattr(instance, 'student'):
@@ -174,7 +177,7 @@ def update_student_total_score(sender, instance,** kwargs):
     # 重新计算所有学生的排名
     recalculate_rankings()
 
-def recalculate_rankings():
+def recalculate_rankings() -> None:
     """重新计算所有学生的排名"""
     students = Student.objects.order_by('-total_score')
     for index, student in enumerate(students, start=1):

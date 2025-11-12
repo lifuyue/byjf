@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -69,7 +70,12 @@ WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
 # 数据库配置
-DB_ENGINE = os.environ.get("PG_PLUS_DB_ENGINE", "sqlite").strip().lower()
+RUNNING_TESTS = os.environ.get("PYTEST_CURRENT_TEST") is not None or any("pytest" in arg for arg in sys.argv)
+DEFAULT_DB_ENGINE = "sqlite"
+DB_ENGINE = os.environ.get("PG_PLUS_DB_ENGINE", DEFAULT_DB_ENGINE).strip().lower()
+if RUNNING_TESTS:
+    DB_ENGINE = "sqlite"
+
 if DB_ENGINE == "mysql":
     DATABASES = {
         "default": {
@@ -90,6 +96,9 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": sqlite_path,
+            "TEST": {
+                "NAME": os.environ.get("PG_PLUS_DB_SQLITE_NAME", ":memory:"),
+            },
         }
     }
 

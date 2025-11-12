@@ -22,4 +22,43 @@ dev = [
     "black>=23.12,<25.0",
     "isort>=5.13,<6.0",
     "flake8>=7.0,<8.0",
+    "mypy>=1.10,<2.0",
+    "django-stubs>=5.0,<6.0",
+    "djangorestframework-stubs>=3.16,<4.0",
+    "pytest>=8.2,<9.0",
+    "pytest-django>=4.8,<5.0",
+    "pytest-cov>=4.1,<5.0",
 ]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+show_error_context = true
+pretty = true
+mypy_path = ["backend"]
+exclude = ["web-.*", "scripts"]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = ["celery", "celery.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "core.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+python_files = ["tests.py", "test_*.py"]
+addopts = "--cov=backend --cov-report=term-missing --no-cov-on-fail"
+testpaths = ["backend/apps"]
+
+[tool.coverage.run]
+branch = true
+source = ["backend"]
+
+[tool.coverage.report]
+show_missing = true

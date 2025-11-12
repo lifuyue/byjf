@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from typing import Any
+
 from django.contrib.contenttypes.models import ContentType
-from django.shortcuts import get_object_or_404
-from django.db.models import Q
-from rest_framework import status, generics
+from django.db.models import Q, QuerySet
+from rest_framework import generics, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 
 from .models import File
 from .serializers import FileSerializer, FileUploadSerializer
@@ -19,7 +22,7 @@ class FileUploadView(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
     parser_classes = (MultiPartParser, FormParser)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: BaseSerializer[Any]) -> None:
         serializer.save()
 
 
@@ -35,7 +38,7 @@ class FileListView(generics.ListAPIView):
     serializer_class = FileSerializer
     permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[File]:
         qs = File.objects.all().order_by("-uploaded_at")
         user = self.request.user
         params = self.request.query_params
@@ -90,7 +93,7 @@ class FileDownloadView(generics.RetrieveAPIView):
     serializer_class = FileSerializer
     permission_classes = (IsAuthenticated,)
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         obj = self.get_object()
         # simple visibility check: owner, teacher/admin or public
         user = request.user

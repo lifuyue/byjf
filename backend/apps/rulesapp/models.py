@@ -1,11 +1,16 @@
 """rulesapp 的模型：分数上限、政策文件与证明审核记录。"""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
-from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.utils import timezone
+
+if TYPE_CHECKING:
+	from apps.scoringapp.models import Student
 
 
 class ScoreLimit(models.Model):
@@ -72,13 +77,13 @@ class ProofReview(models.Model):
 		verbose_name = "证明审核"
 		verbose_name_plural = "证明审核"
 
-	def mark_approved(self, reviewer):
+	def mark_approved(self, reviewer: "Student | None") -> None:
 		self.status = self.STATUS_APPROVED
 		self.reviewer = reviewer
 		self.reviewed_at = timezone.now()
 		self.save(update_fields=["status", "reviewer", "reviewed_at"])
 
-	def mark_rejected(self, reviewer, reason: str | None = None):
+	def mark_rejected(self, reviewer: "Student | None", reason: str | None = None) -> None:
 		self.status = self.STATUS_REJECTED
 		self.reason = reason
 		self.reviewer = reviewer

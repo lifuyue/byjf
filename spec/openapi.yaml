@@ -2,56 +2,150 @@ openapi: 3.0.3
 info:
   title: PG-Plus API
   version: 0.1.0
-  description: >-
-    Scaffolded OpenAPI definition. Replace with generated schema once endpoints
-    exist.
+  description: Backend contract for the Django + DRF services that power PG-Plus.
 servers:
-  - url: /api/v1
+  - url: /api
 paths:
-  /health:
+  /health/:
     get:
       summary: Health check
-      description: Lightweight service liveness probe.
+      description: Lightweight service liveness probe mapping to `core.urls.health`.
       responses:
         '200':
           description: Service is healthy
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-  /auth/login:
+                $ref: '#/components/schemas/HealthResponse'
+  /v1/auth/login/:
     post:
-      summary: JWT login placeholder
-      description: Exchange credentials for JWTs.
+      summary: Exchange username + password for JWTs
+      description: Proxy to Simple JWT's `TokenObtainPairView`.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-              required:
-                - username
-                - password
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: JWT pair response placeholder
+          description: Login succeeded
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  access:
-                    type: string
-                  refresh:
-                    type: string
-        '501':
-          description: Not yet implemented
+                $ref: '#/components/schemas/JwtPair'
+        '401':
+          description: Invalid credentials
+  /v1/auth/refresh/:
+    post:
+      summary: Refresh access token
+      description: DRF Simple JWT refresh endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+      responses:
+        '200':
+          description: Refreshed token returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+        '401':
+          description: Refresh token invalid or expired
+  /v1/auth/me/:
+    get:
+      summary: Current user profile
+      description: Returns the authenticated student's profile with role metadata.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          description: Missing or invalid JWT
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    JwtPair:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Encoded JWT access token.
+        refresh:
+          type: string
+          description: Encoded JWT refresh token.
+      required:
+        - access
+        - refresh
+    TokenRefreshRequest:
+      type: object
+      required:
+        - refresh
+      properties:
+        refresh:
+          type: string
+    TokenRefreshResponse:
+      type: object
+      required:
+        - access
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+          description: Optional new refresh token when rotation is enabled.
+    CurrentUser:
+      type: object
+      required:
+        - id
+        - username
+        - role
+        - is_staff
+        - is_superuser
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        student_id:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum:
+            - student
+            - teacher
+            - admin
+        is_staff:
+          type: boolean
+        is_superuser:
+          type: boolean

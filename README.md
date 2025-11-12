@@ -121,8 +121,12 @@
 
    ## 代码风格与格式化
    - 后端：`make fmt`/`make lint` 已由 uv 安装并调用 `black`、`isort`、`flake8`。
+   - 后端新增的 `make typecheck`（mypy）和 `make test`（pytest + coverage）可在提交前快速验证类型与单元测试。
    - 前端：在各自 web 目录内使用 `npm run lint`、`npm run fmt`、`npm run typecheck`。
    - Hash 路由可确保与 `/gsapp/` 挂载兼容；若需改为 history 模式，仅在具备服务端回退时进行。
+
+   ## 持续集成
+   GitHub Actions (`.github/workflows/ci.yml`) 会在 push / PR 时安装 uv 依赖并执行 `uv run mypy backend` 与 `uv run python -m pytest backend`，确保后端类型检查与单元测试持续通过。
 
    ## 后续工作 TODO
    - 在各应用中实现业务逻辑、序列化器与模型（评分规则、政策入库等）。

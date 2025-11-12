@@ -1,8 +1,10 @@
+from __future__ import annotations
+
+from typing import Any
+
 from rest_framework import serializers
-from .models import (
-    Student, SubjectScore, 
-    AcademicExpertise, ComprehensivePerformance, get_score_limits
-)
+
+from .models import AcademicExpertise, ComprehensivePerformance, Student, SubjectScore, get_score_limits
 
 class AcademicExpertiseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,7 +24,7 @@ class SubjectScoreSerializer(serializers.ModelSerializer):
         fields = ['id', 'gpa', 'a_value', 'calculated_score']
         read_only_fields = ['id', 'calculated_score']
     
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         """验证学科成绩相关数据"""
         a_max, _, _ = get_score_limits()
         if 'a_value' in data and data['a_value'] != a_max:
@@ -49,7 +51,7 @@ class StudentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'total_score', 'ranking', 'date_joined']
     
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> Student:
         # 提取嵌套数据
         subject_score_data = validated_data.pop('subject_score')
         academic_expertises_data = validated_data.pop('academic_expertises')
@@ -64,15 +66,15 @@ class StudentSerializer(serializers.ModelSerializer):
         
         # 创建学术专长记录
         for exp_data in academic_expertises_data:
-            AcademicExpertise.objects.create(student=student,** exp_data)
+            AcademicExpertise.objects.create(student=student, **exp_data)
         
         # 创建综合表现记录
         for cp_data in comprehensive_performances_data:
             ComprehensivePerformance.objects.create(student=student, **cp_data)
-        
+    
         return student
     
-    def update(self, instance, validated_data):
+    def update(self, instance: Student, validated_data: dict[str, Any]) -> Student:
         # 处理密码更新
         if 'password' in validated_data:
             password = validated_data.pop('password')
@@ -94,7 +96,7 @@ class StudentSerializer(serializers.ModelSerializer):
             instance.academic_expertises.all().delete()
             # 创建新记录
             for exp_data in academic_expertises_data:
-                AcademicExpertise.objects.create(student=instance,** exp_data)
+                AcademicExpertise.objects.create(student=instance, **exp_data)
         
         # 处理综合表现更新
         if 'comprehensive_performances' in validated_data:

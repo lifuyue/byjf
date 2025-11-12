@@ -14,7 +14,7 @@ class ScoreLimitSerializer(serializers.ModelSerializer):
 
 
 class PolicySerializer(serializers.ModelSerializer):
-	uploaded_by = serializers.StringRelatedField(read_only=True)
+	uploaded_by: serializers.StringRelatedField = serializers.StringRelatedField(read_only=True)
 
 	class Meta:
 		model = Policy
@@ -22,9 +22,9 @@ class PolicySerializer(serializers.ModelSerializer):
 
 
 class ProofReviewSerializer(serializers.ModelSerializer):
-	reviewer = serializers.StringRelatedField(read_only=True)
-	student = serializers.StringRelatedField(read_only=True)
-	content_type = serializers.SlugRelatedField(slug_field="model", queryset=ContentType.objects.all())
+	reviewer: serializers.StringRelatedField = serializers.StringRelatedField(read_only=True)
+	student: serializers.StringRelatedField = serializers.StringRelatedField(read_only=True)
+	content_type: serializers.SlugRelatedField = serializers.SlugRelatedField(slug_field="model", queryset=ContentType.objects.all())
 
 	class Meta:
 		model = ProofReview
