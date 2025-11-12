@@ -112,22 +112,23 @@ body {
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
         }
 
-        .container {
-            display: flex;
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            animation: fadeIn 0.8s ease-out;
-            min-height: 80vh;
-        }
+.container {
+    display: flex;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: fadeIn 0.8s ease-out;
+    min-height: 80vh;
+}
 
-
-to { opacity: 1; transform: translateY(0); }
-        }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
         .left-panel {
             flex: 1;

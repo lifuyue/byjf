@@ -32,7 +32,7 @@
 
    ## 技术栈亮点
    - 以 ASGI 为先的心智模型完成 Django 5、DRF 与 Simple JWT 的基础接线（`gunicorn -k uvicorn.workers.UvicornWorker` 或 `daphne`）。
-   - MySQL（utf8mb4）为主存储；README 备注了用于原型期的可选 SQLite 退路。
+   - SQLite 3 作为默认存储，随仓库即可原地演示；设置环境变量可切换到 MySQL 8（utf8mb4）以对齐生产。
    - 由 Redis 驱动的 Celery worker 与 beat 桩，准备好用于任务、缓存与限流。
    - 两个独立的 Vue 3 + Vite 应用（`web-student`、`web-admin`），使用 hash 路由，axios 指向 `/gsapp/api/v1`。
    - Nginx 配置已就绪以挂载到 `/gsapp/`：静态资源、管理端构建产物以及对 `/gsapp/api/` 的代理与重写。
@@ -41,20 +41,21 @@
    - Python 3.11+
    - uv 0.9+（用于 Python 依赖管理，需自行安装）
    - Node.js 18+
-   - MySQL 8+
+   - SQLite 3（系统自带即可）
+   - MySQL 8+（可选，用于生产或性能测试）
    - Redis 6+
 
    ## 环境配置
    将 `.env.example` 复制为 `.env`（也可为各服务准备独立的 env 文件）。关键变量：
    - `PG_PLUS_SECRET_KEY`、`PG_PLUS_DEBUG`、`PG_PLUS_ALLOWED_HOSTS`
-   - 数据库配置块（`PG_PLUS_DB_*`）
+   - 数据库配置块（默认 SQLite，可通过 `PG_PLUS_DB_ENGINE` 切换到 MySQL；示例变量位于 `.env.example`）
    - Redis 与 Celery 端点（`PG_PLUS_REDIS_URL`、`PG_PLUS_CELERY_*`）
    - JWT 生命周期与签名密钥（`PG_PLUS_JWT_*`）
    - 文件存储占位（MinIO / OSS）→ 之后接入适配器
    - 面向未来的 CAS/OIDC SSO 占位
    - 前端 `VITE_API_BASE=/gsapp/api/v1`
 
-   > 可选：若本地原型阶段不使用 MySQL，可按 README 内联 TODO 将 `DATABASES['default']` 切换为 SQLite。
+   > 直接使用 SQLite 演示：保持 `PG_PLUS_DB_ENGINE=sqlite`（默认值）；若需 MySQL，请设置 `PG_PLUS_DB_ENGINE=mysql` 并提供 `PG_PLUS_DB_*` 凭据。
 
    ## 依赖与运行方式（uv）
    - 仓库根目录使用 uv 创建 `.venv/`，`make setup` 会执行 `uv sync --all-groups` 并在各前端目录安装 Node 依赖。
@@ -75,9 +76,10 @@
       ```bash
       make setup
       ```
-   2. **启动数据库与 Redis**
-      - 推荐：使用 Docker 运行 MySQL 8（`utf8mb4`）与 Redis 6。
-      - 确保凭据与 `.env` 一致。
+   2. **准备数据库与 Redis**
+      - 默认：无需额外操作，SQLite 数据库存放在 `backend/db.sqlite3`（可通过 `PG_PLUS_SQLITE_PATH` 自定义）。
+      - 切换到 MySQL：运行服务（推荐 Docker，MySQL 8 `utf8mb4`），并在 `.env` 中设置 `PG_PLUS_DB_ENGINE=mysql` 以及 `PG_PLUS_DB_*` 凭据。
+      - Redis 依旧由开发者自备；示例配置指向 `redis://127.0.0.1:6379/*`。
    3. **启动后端（开发模式）**
       ```bash
       uv run python backend/manage.py migrate --noinput
