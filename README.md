@@ -141,4 +141,4 @@
    - **前端（管理端）**：构建看板、用 JWT 保护路由，确保管理端构建产物保持在 `/gsapp/admin/` 下。
    - **DevOps**：参数化 Nginx 路径，配置 MySQL/Redis/Celery，并设置 CI 以进行 lint/测试/构建。
 
-   ````
+   
