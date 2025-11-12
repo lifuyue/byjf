@@ -69,20 +69,29 @@ WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
 # 数据库配置
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ.get("PG_PLUS_DB_NAME", "pg_plus"),
-        "USER": os.environ.get("PG_PLUS_DB_USER", "pg_plus_user"),
-        "PASSWORD": os.environ.get("PG_PLUS_DB_PASSWORD", "pg_plus_password"),
-        "HOST": os.environ.get("PG_PLUS_DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("PG_PLUS_DB_PORT", "3306"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-        },
+DB_ENGINE = os.environ.get("PG_PLUS_DB_ENGINE", "sqlite").strip().lower()
+if DB_ENGINE == "mysql":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ.get("PG_PLUS_DB_NAME", "pg_plus"),
+            "USER": os.environ.get("PG_PLUS_DB_USER", "pg_plus_user"),
+            "PASSWORD": os.environ.get("PG_PLUS_DB_PASSWORD", "pg_plus_password"),
+            "HOST": os.environ.get("PG_PLUS_DB_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("PG_PLUS_DB_PORT", "3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
     }
-}
-# TODO：如需快速原型开发，开发者可切换为 SQLite，详见 README。
+else:
+    sqlite_path = os.environ.get("PG_PLUS_SQLITE_PATH", str(BASE_DIR / "db.sqlite3"))
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": sqlite_path,
+        }
+    }
 
 # 密码校验
 AUTH_PASSWORD_VALIDATORS = [
