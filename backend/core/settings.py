@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -69,20 +70,33 @@ WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
 # 数据库配置
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ.get("PG_PLUS_DB_NAME", "pg_plus"),
-        "USER": os.environ.get("PG_PLUS_DB_USER", "pg_plus_user"),
-        "PASSWORD": os.environ.get("PG_PLUS_DB_PASSWORD", "pg_plus_password"),
-        "HOST": os.environ.get("PG_PLUS_DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("PG_PLUS_DB_PORT", "3306"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-        },
+RUNNING_TESTS = os.environ.get("PYTEST_CURRENT_TEST") is not None or any("pytest" in arg for arg in sys.argv)
+DEFAULT_DB_ENGINE = "sqlite" if RUNNING_TESTS else "mysql"
+DB_ENGINE = os.environ.get("PG_PLUS_DB_ENGINE", DEFAULT_DB_ENGINE).lower()
+if DB_ENGINE == "sqlite":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.environ.get("PG_PLUS_DB_SQLITE_NAME", str(BASE_DIR / "db.sqlite3")),
+            "TEST": {
+                "NAME": os.environ.get("PG_PLUS_DB_SQLITE_NAME", ":memory:"),
+            },
+        }
     }
-}
-# TODO：如需快速原型开发，开发者可切换为 SQLite，详见 README。
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ.get("PG_PLUS_DB_NAME", "pg_plus"),
+            "USER": os.environ.get("PG_PLUS_DB_USER", "pg_plus_user"),
+            "PASSWORD": os.environ.get("PG_PLUS_DB_PASSWORD", "pg_plus_password"),
+            "HOST": os.environ.get("PG_PLUS_DB_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("PG_PLUS_DB_PORT", "3306"),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
+    }
 
 # 密码校验
 AUTH_PASSWORD_VALIDATORS = [

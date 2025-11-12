@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
@@ -23,7 +26,7 @@ class CurrentUserView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         user = request.user
         data = {
             "id": user.id,

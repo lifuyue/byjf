@@ -1,14 +1,22 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, cast
+
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404
-from rest_framework import status, generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
-from .models import ScoreLimit, Policy, ProofReview
-from .serializers import ScoreLimitSerializer, PolicySerializer, ProofReviewSerializer
+from .models import Policy, ProofReview, ScoreLimit
+from .serializers import PolicySerializer, ProofReviewSerializer, ScoreLimitSerializer
+
+if TYPE_CHECKING:
+    from apps.scoringapp.models import Student
 
 
 class ScoreLimitView(APIView):
@@ -16,12 +24,12 @@ class ScoreLimitView(APIView):
 
     permission_classes = (IsAdminUser,)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         obj = ScoreLimit.objects.first()
         serializer = ScoreLimitSerializer(obj)
         return Response(serializer.data)
 
-    def put(self, request, *args, **kwargs):
+    def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         obj = ScoreLimit.objects.first()
         if not obj:
             obj = ScoreLimit()
@@ -38,7 +46,7 @@ class PolicyUploadView(generics.ListCreateAPIView):
     queryset = Policy.objects.all().order_by('-uploaded_at')
     serializer_class = PolicySerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: BaseSerializer[Any]) -> None:
         serializer.save(uploaded_by=self.request.user)
 
 
@@ -54,19 +62,27 @@ class ProofReviewView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         user = request.user
+        if isinstance(user, AnonymousUser):
+            return Response({"detail": "用户未认证"}, status=status.HTTP_401_UNAUTHORIZED)
+        typed_user = cast("Student", user)
         # 仅允许 教师（role=='teacher'）/staff 或 superuser 操作（教师/管理员）
-        if not (getattr(user, 'role', None) == 'teacher' or user.is_staff or user.is_superuser):
+        if not (getattr(typed_user, 'role', None) == 'teacher' or typed_user.is_staff or typed_user.is_superuser):
             return Response({"detail": "权限不足"}, status=status.HTTP_403_FORBIDDEN)
 
         content_type_label = request.data.get("content_type")
-        object_id = request.data.get("object_id")
+        object_id_raw = request.data.get("object_id")
         action = request.data.get("action")
         reason = request.data.get("reason")
 
-        if not content_type_label or not object_id or not action:
+        if not content_type_label or object_id_raw is None or not action:
             return Response({"detail": "content_type、object_id 和 action 为必填字段"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            object_id = int(object_id_raw)
+        except (TypeError, ValueError):
+            return Response({"detail": "object_id 需要是整数"}, status=status.HTTP_400_BAD_REQUEST)
 
         # 支持传入 model 名或 app_label.model
         try:
@@ -92,7 +108,7 @@ class ProofReviewView(APIView):
 
         # 获取文件路径（若存在）
         file_field = getattr(obj, "material", None)
-        file_path = None
+        file_path: str | None = None
         if file_field:
             file_path = file_field.name
 
@@ -106,7 +122,7 @@ class ProofReviewView(APIView):
         )
 
         if action == "approve":
-            review.mark_approved(reviewer=user)
+            review.mark_approved(reviewer=typed_user)
             return Response({"detail": "已通过"}, status=status.HTTP_200_OK)
         elif action == "reject":
             # 删除文件并清空字段
@@ -124,7 +140,7 @@ class ProofReviewView(APIView):
                     # 忽略不能保存的情况
                     pass
 
-            review.mark_rejected(reviewer=user, reason=reason)
+            review.mark_rejected(reviewer=typed_user, reason=reason)
             return Response({"detail": "已驳回", "reason": reason}, status=status.HTTP_200_OK)
         else:
             return Response({"detail": "未知的 action，须为 'approve' 或 'reject'"}, status=status.HTTP_400_BAD_REQUEST)

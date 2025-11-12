@@ -119,6 +119,7 @@
 
    ## 代码风格与格式化
    - 后端：`make fmt`/`make lint` 已由 uv 安装并调用 `black`、`isort`、`flake8`。
+   - 后端新增的 `make typecheck`（mypy）和 `make test`（pytest + coverage）可在提交前快速验证类型与单元测试。
    - 前端：在各自 web 目录内使用 `npm run lint`、`npm run fmt`、`npm run typecheck`。
    - Hash 路由可确保与 `/gsapp/` 挂载兼容；若需改为 history 模式，仅在具备服务端回退时进行。
 

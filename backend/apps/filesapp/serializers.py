@@ -1,12 +1,14 @@
 """Serializers for filesapp."""
 from __future__ import annotations
 
+from typing import Any
+
 from rest_framework import serializers
+
 from .models import File
 
-
 class FileSerializer(serializers.ModelSerializer):
-	owner = serializers.StringRelatedField(read_only=True)
+	owner: serializers.StringRelatedField = serializers.StringRelatedField(read_only=True)
 
 	class Meta:
 		model = File
@@ -35,16 +37,16 @@ class FileUploadSerializer(serializers.ModelSerializer):
 		fields = ("id", "file", "visibility", "metadata", "content_type", "object_id")
 		read_only_fields = ("id",)
 
-	def create(self, validated_data):
+	def create(self, validated_data: dict[str, Any]) -> File:
 		request = self.context.get("request")
 		owner = getattr(request, "user", None)
 		file_obj = validated_data.pop("file")
-		f = File(file=file_obj, owner=owner, **validated_data)
-		f.save()
+		new_file = File(file=file_obj, owner=owner, **validated_data)
+		new_file.save()
 		# compute checksum lazily (safe to call after save)
 		try:
-			f.compute_checksum()
-			f.save(update_fields=["checksum"])
+			new_file.compute_checksum()
+			new_file.save(update_fields=["checksum"])
 		except Exception:
 			pass
-		return f
+		return new_file

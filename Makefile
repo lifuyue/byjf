@@ -42,5 +42,11 @@ lint:
 	cd web-admin && $(NODE) run lint || true
 	cd web-teacher && $(NODE) run lint || true
 
+typecheck:
+	$(UV) run mypy backend
+
+test:
+	$(UV) run python -m pytest backend
+
 openapi:
 	echo "TODO: generate OpenAPI spec" && exit 0

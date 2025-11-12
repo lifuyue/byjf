@@ -1,6 +1,8 @@
 """Celery app bootstrap."""
 from __future__ import annotations
 
+from typing import Any
+
 import os
 
 from celery import Celery
@@ -13,6 +15,6 @@ celery_app.autodiscover_tasks()
 
 
 @celery_app.task(bind=True)
-def debug_task(self) -> str:
+def debug_task(self: Any) -> str:
     """Default debug task."""
     return f"Request: {self.request!r}"
