@@ -123,6 +123,9 @@
    - 前端：在各自 web 目录内使用 `npm run lint`、`npm run fmt`、`npm run typecheck`。
    - Hash 路由可确保与 `/gsapp/` 挂载兼容；若需改为 history 模式，仅在具备服务端回退时进行。
 
+   ## 持续集成
+   GitHub Actions (`.github/workflows/ci.yml`) 会在 push / PR 时安装 uv 依赖并执行 `uv run mypy backend` 与 `uv run python -m pytest backend`，确保后端类型检查与单元测试持续通过。
+
    ## 后续工作 TODO
    - 在各应用中实现业务逻辑、序列化器与模型（评分规则、政策入库等）。
    - 自动生成 OpenAPI（如 DRF Spectacular），并与 `spec/openapi.yaml` 保持同步。
