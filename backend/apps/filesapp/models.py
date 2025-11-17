@@ -1,8 +1,6 @@
 """Models for filesapp.
 
-Provides a centralized File model used by other apps to store metadata about
-uploaded files. The model intentionally keeps track of ownership, visibility,
-and optional generic relation to a business object.
+Tracks uploaded files, their visibility, processing status, and simple review metadata.
 """
 from __future__ import annotations
 
@@ -32,29 +30,48 @@ class File(models.Model):
         (VIS_PUBLIC, "公开"),
     ]
 
-    STATUS_UPLOADED = "uploaded"
-    STATUS_SCANNED = "scanned"
+    STATUS_QUEUED = "queued"
+    STATUS_PROCESSING = "processing"
+    STATUS_DONE = "done"
+    STATUS_FAILED = "failed"
     STATUS_APPROVED = "approved"
     STATUS_REJECTED = "rejected"
-    STATUS_ARCHIVED = "archived"
     STATUS_CHOICES = [
-        (STATUS_UPLOADED, "已上传"),
-        (STATUS_SCANNED, "已扫描"),
-        (STATUS_APPROVED, "已批准"),
+        (STATUS_QUEUED, "排队中"),
+        (STATUS_PROCESSING, "处理中"),
+        (STATUS_DONE, "已处理"),
+        (STATUS_FAILED, "处理失败"),
+        (STATUS_APPROVED, "已通过"),
         (STATUS_REJECTED, "已驳回"),
-        (STATUS_ARCHIVED, "已归档"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField(upload_to=upload_to_files)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="files")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="files",
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
     size = models.PositiveBigIntegerField(null=True, blank=True)
     mime_type = models.CharField(max_length=255, null=True, blank=True)
     checksum = models.CharField(max_length=128, null=True, blank=True)
     visibility = models.CharField(max_length=32, choices=VISIBILITY_CHOICES, default=VIS_PRIVATE)
-    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_UPLOADED)
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_QUEUED)
     metadata = models.JSONField(null=True, blank=True)
+    error_message = models.TextField(null=True, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_files",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.TextField(null=True, blank=True)
 
     # optional generic relation to business objects
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.SET_NULL)
@@ -71,12 +88,10 @@ class File(models.Model):
     def compute_checksum(self) -> str:
         """计算并返回 sha256 校验和（并保存）。"""
         h = hashlib.sha256()
-        # read file in chunks
         self.file.seek(0)
         for chunk in self.file.chunks():
             h.update(chunk)
         self.checksum = h.hexdigest()
-        # restore file pointer
         try:
             self.file.seek(0)
         except Exception:

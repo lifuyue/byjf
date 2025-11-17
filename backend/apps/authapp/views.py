@@ -3,37 +3,71 @@ from __future__ import annotations
 from typing import Any
 
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from .serializers import (
+    ChangePasswordSerializer,
+    JwtTokenObtainPairSerializer,
+    RegistrationSerializer,
+    UserProfileSerializer,
+)
+from .tokens import issue_token_pair
 
-# Use SimpleJWT views for token obtain/refresh
+
+class RegisterView(APIView):
+    """Register a new user with a specific role."""
+
+    permission_classes = (AllowAny,)
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = RegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        refresh, access = issue_token_pair(user)
+        payload = {
+            "user": UserProfileSerializer(user).data,
+            "access": str(access),
+            "refresh": str(refresh),
+        }
+        return Response(payload, status=status.HTTP_201_CREATED)
+
+
 class JwtLoginView(TokenObtainPairView):
-    """登录以换取 access/refresh token（使用 Simple JWT 的实现）。"""
-    pass
+    """Issue JWT token pair via Simple JWT."""
+
+    permission_classes = (AllowAny,)  # type: ignore[assignment]
+    serializer_class = JwtTokenObtainPairSerializer
 
 
 class JwtRefreshView(TokenRefreshView):
     """Refresh token endpoint."""
-    pass
+
+    permission_classes = (AllowAny,)  # type: ignore[assignment]
 
 
 class CurrentUserView(APIView):
-    """返回当前登录用户的基本信息（包含 role）。"""
+    """Return the authenticated user's profile."""
 
     permission_classes = (IsAuthenticated,)
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        user = request.user
-        data = {
-            "id": user.id,
-            "username": getattr(user, "username", None),
-            "student_id": getattr(user, "student_id", None),
-            "role": getattr(user, "role", None),
-            "is_staff": user.is_staff,
-            "is_superuser": user.is_superuser,
-        }
+        data = UserProfileSerializer(request.user).data
         return Response(data, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    """Allow authenticated users to update their password."""
+
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "密码已更新。"}, status=status.HTTP_200_OK)

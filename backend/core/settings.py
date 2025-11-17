@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "apps.rulesapp",
     "apps.scoringapp",
     "apps.policiesapp",
+    "apps.dictsapp",
 ]
 
 # 使用自定义用户模型（scoringapp.Student）作为项目的认证用户模型

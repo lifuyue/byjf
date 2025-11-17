@@ -11,4 +11,5 @@ urlpatterns = [
     path("upload/", views.FileUploadView.as_view(), name="upload"),
     path("<uuid:pk>/", views.FileDetailView.as_view(), name="detail"),
     path("<uuid:pk>/download/", views.FileDownloadView.as_view(), name="download"),
+    path("<uuid:pk>/review/", views.FileReviewView.as_view(), name="review"),
 ]
