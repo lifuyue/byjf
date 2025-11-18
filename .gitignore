@@ -17,13 +17,11 @@ backend/staticfiles/
 node_modules/
 *.tsbuildinfo
 *.log
-pnpm-lock.yaml
 yarn.lock
 package-lock.json
 
 # Frontend build outputs
-web-student/dist/
-web-admin/dist/
+frontends/web-*/dist/
 
 # Env files
 .env.local

@@ -7,8 +7,8 @@
    ```
    浏览器 ────── Hash 路由（Vite 单页应用）
       |                  |\
-      |                  | \__ web-student (/gsapp/)
-      |                  |____ web-admin (/gsapp/admin/)
+      |                  | \__ frontends/web-student (/gsapp/)
+      |                  |____ frontends/web-admin (/gsapp/admin/)
       v
    +--------------------------+
    |        Nginx             |
@@ -34,7 +34,7 @@
    - 以 ASGI 为先的心智模型完成 Django 5、DRF 与 Simple JWT 的基础接线（`gunicorn -k uvicorn.workers.UvicornWorker` 或 `daphne`）。
    - SQLite 3 作为默认存储，随仓库即可原地演示；设置环境变量可切换到 MySQL 8（utf8mb4）以对齐生产。
    - 由 Redis 驱动的 Celery worker 与 beat 桩，准备好用于任务、缓存与限流。
-   - 两个独立的 Vue 3 + Vite 应用（`web-student`、`web-admin`），使用 hash 路由，axios 指向 `/gsapp/api/v1`。
+   - Vue 3 + Vite 应用集中在 `frontends/` pnpm workspace（学生端、管理端、教师端），使用 hash 路由，axios 指向 `/gsapp/api/v1`。
    - Nginx 配置已就绪以挂载到 `/gsapp/`：静态资源、管理端构建产物以及对 `/gsapp/api/` 的代理与重写。
 
    ## 环境要求
@@ -78,15 +78,17 @@
    如果希望完全复用 `make setup` / `make backend-serve` 等命令，可通过 winget / scoop / chocolatey 安装 `make`，或在 Git Bash/WSL 中运行本仓库。
 
    ## 依赖与运行方式（uv）
-   - 仓库根目录使用 uv 创建 `.venv/`，`make setup` 会执行 `uv sync --all-groups` 并在各前端目录安装 Node 依赖。
+   - 仓库根目录使用 uv 创建 `.venv/`，`make setup` 会执行 `uv sync --all-groups` 并在 `frontends/` 下通过 `pnpm install` 统一安装前端依赖。
    - 任意需要 Python 的命令请改用 `uv run ...`（例如 `uv run python backend/manage.py migrate`、`uv run celery ...`）。
    - 若部署环境必须使用 `requirements.txt`，可在需要时运行 `uv export --frozen > backend/requirements.txt` 临时生成（文件不再长期保留）。
    - 根目录附带 `.python-version`（3.11），方便 uv / pyenv / IDE 自动解析并定位 `.venv/bin/python3.11`。
 
    ## 项目结构
    - `backend/` – Django 工程，包含核心设置、Celery 启动以及空的领域应用（`authapp`、`filesapp`、`rulesapp`、`scoringapp`、`policiesapp`）。
-   - `web-student/` – 面向学生的 SPA；Vite 基础路径为 `/gsapp/`。
-   - `web-admin/` – 管理端 SPA；Vite 基础路径为 `/gsapp/admin/`，以确保构建产物互不干扰。
+   - `frontends/` – pnpm workspace，聚合所有 Vite 应用：
+     - `web-student/` – 面向学生的 SPA；Vite 基础路径为 `/gsapp/`。
+     - `web-admin/` – 管理端 SPA；Vite 基础路径为 `/gsapp/admin/`，以确保构建产物互不干扰。
+     - `web-teacher/` – 教师端 SPA，占位路由同样挂载在 `/gsapp/teacher/`（可按需要调整）。
    - `spec/openapi.yaml` – OpenAPI 文档占位；当真实端点存在后再生成。
    - `nginx/site.conf` – 生产环境外壳，用于静态资源服务与 API 代理。
    - `scripts/` – 开发编排说明与种子脚本桩（会抛出 `NotImplementedError`）。
@@ -113,15 +115,23 @@
       ```
    5. **启动前端**（hash 路由在开发环境下可保持 `/gsapp/` 路径正常）
       ```bash
-      cd web-student && npm run dev -- --host
-      cd web-admin && npm run dev -- --host --port 5174
+      cd frontends
+      pnpm dev:student -- --host
+      pnpm dev:admin -- --host --port 5174
+      pnpm dev:teacher -- --host --port 5175
+      # 或者一次性启动三个开发服务器
+      pnpm dev
       ```
+      > Windows 若缺少 `make`，只需在 `frontends/` 下执行 `pnpm install` 与上述 `pnpm dev:*` 命令即可完成前端开发体验。
    6. **生产预览**
       ```bash
-      npm run build
-      npm run preview -- --host
+      cd frontends
+      pnpm build
+      pnpm --filter pg-plus-web-student preview -- --host
+      pnpm --filter pg-plus-web-admin preview -- --host
+      pnpm --filter pg-plus-web-teacher preview -- --host
       ```
-      在两个前端目录中分别执行上述命令。
+      `pnpm build` 会串行构建所有前端包，如需单独构建可使用 `pnpm --filter <package> build`。
 
    ## 服务栈说明
    - 反向代理假定以 `/gsapp/` 为前缀的 Nginx 入口。学生端构建以 `/gsapp/` 为 base；管理端为 `/gsapp/admin/` 以避免资源冲突。
@@ -130,7 +140,7 @@
    - Daphne 备选：`daphne -b 0.0.0.0 -p 8000 core.asgi:application`。
 
    ## Nginx 重写规则测试
-   使用本地容器或通过 `nginx -c` 指向 `nginx/site.conf`。可将 `web-*/dist` 的输出软链到 `/var/www/pg-plus/...`，或根据你的工作区调整别名。确认以下行为：
+   使用本地容器或通过 `nginx -c` 指向 `nginx/site.conf`。可将 `frontends/web-*/dist` 的输出软链到 `/var/www/pg-plus/...`，或根据你的工作区调整别名。确认以下行为：
    - `/gsapp/` 能提供学生端 SPA，且 hash 导航稳定。
    - `/gsapp/admin/` 能提供管理端 SPA。
    - `/gsapp/api/v1/...` 请求通过重写到达 Django 的 `/api/v1/...`。
@@ -143,7 +153,7 @@
    ## 代码风格与格式化
    - 后端：`make fmt`/`make lint` 已由 uv 安装并调用 `black`、`isort`、`flake8`。
    - 后端新增的 `make typecheck`（mypy）和 `make test`（pytest + coverage）可在提交前快速验证类型与单元测试。
-   - 前端：在各自 web 目录内使用 `npm run lint`、`npm run fmt`、`npm run typecheck`。
+   - 前端：在 `frontends/` 下使用 `pnpm lint`、`pnpm fmt`、`pnpm typecheck`（会串行触发各子应用脚本）。
    - Hash 路由可确保与 `/gsapp/` 挂载兼容；若需改为 history 模式，仅在具备服务端回退时进行。
 
    ## 持续集成
