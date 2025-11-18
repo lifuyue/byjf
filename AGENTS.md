@@ -2,15 +2,16 @@
 
 ## Project Structure & Module Organization
 - `backend/` contains the Django project; apps live in `backend/apps/` with per-app tests under `tests/`. Shared settings and Celery config sit in `backend/core/`, and uploads land in `backend/media/`.
-- `web-admin/`, `web-student/`, and `web-teacher/` are Vite + Vue 3 frontends. Ship features inside each `src/` tree and keep `web-student`'s static HTML limited to marketing entry points.
+- `frontends/` is a pnpm workspace. Each Vue 3 + Vite app lives under `frontends/web-student`, `frontends/web-admin`, or `frontends/web-teacher` (static `index.html`/`scripts/`/`styles/` serve as the current UI while `src/` remains scaffolded).
 - Infra assets reside in `spec/openapi.yaml`, `scripts/`, and `nginx/`; update these together when API gateways or deploy flows change.
 
 ## Build, Test, and Development Commands
 - `.python-version` pins 3.11 so uv/pyenv/IDEs can auto-resolve `.venv/bin/python3.11`.
-- `make setup` runs `uv sync --all-groups` (creating `.venv/`) and runs a quiet `npm install` for all frontends.
-- On Windows without GNU Make, run `python -m pip install --upgrade uv`, `uv sync --all-groups`, and `npm install --no-audit --no-fund --loglevel=error` inside each `web-*` directory before invoking the subsequent `uv run ...` commands manually.
-- `make backend-serve` applies migrations and starts Django on `0.0.0.0:8000` via `uv run python backend/manage.py ...`; load env values from `.env` seeded via `.env.example`.
-- `make frontend-dev`, `make frontend-dev-admin`, and `make frontend-dev-teacher` start the student, admin, or teacher Vite servers (equivalent to `npm run dev -- --open` in each package); Celery workers use `make celery` and the scheduler uses `make celery-beat` once Redis is available.
+- `make setup` still runs `uv sync --all-groups`, then boots into `frontends/` to execute `pnpm install` for every SPA.
+- Windows contributors can skip GNU Make entirely: run `python -m pip install --upgrade uv`, `uv sync --all-groups`, then `cd frontends && pnpm install && pnpm dev` to spin up all dev servers. Backend commands use `uv run python backend/manage.py ...` directly.
+- `make backend-serve` remains a shortcut for `uv run python backend/manage.py migrate && uv run python backend/manage.py runserver 0.0.0.0:8000`.
+- In `frontends/`, `pnpm dev` runs all apps concurrently (student/admin/teacher on 5173/5174/5175). Use `pnpm dev:student` / `pnpm dev:teacher` / `pnpm dev:admin` for focused work, and `pnpm build`/`pnpm lint`/`pnpm typecheck` to orchestrate workspace tasks.
+- Celery workers continue to use `make celery` / `make celery-beat` (or `uv run celery -A backend.core worker|beat`) once Redis is available.
 
 ## Coding Style & Naming Conventions
 - Run Black (88 cols), isort, and Flake8 on Python modules. Use `snake_case` modules, `PascalCase` classes, `UPPER_SNAKE` constants, and annotate public interfaces.
