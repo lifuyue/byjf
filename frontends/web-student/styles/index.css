@@ -327,17 +327,197 @@ body {
             box-shadow: 0 4px 8px rgba(74, 111, 165, 0.3);
         }
 
-        .items-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
 
-        .item-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 18px;
-            transition: all 0.3s ease;
+.teacher-projects {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e5e9f2;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+.teacher-projects-header {
+    margin-bottom: 10px;
+}
+
+.refresh-projects-btn {
+    border: none;
+    background: #eef2fb;
+    color: #2c3e50;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease;
+}
+
+.refresh-projects-btn:hover {
+    background: #dfe6f8;
+}
+
+.refresh-projects-btn.active {
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+}
+
+.teacher-projects.disabled {
+    opacity: 0.7;
+}
+
+.teacher-projects.disabled .refresh-projects-btn {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.teacher-projects-list {
+    gap: 12px;
+}
+
+.teacher-project-card {
+    border: 1px solid #e8edf7;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fdfdff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border 0.2s ease, transform 0.2s ease;
+}
+
+.teacher-project-card:hover {
+    transform: translateY(-2px);
+    border-color: #c7d2ea;
+}
+
+.teacher-project-card.full {
+    opacity: 0.75;
+}
+
+.teacher-project-card .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.teacher-project-card .card-top h3 {
+    font-size: 18px;
+    color: #2c3e50;
+}
+
+.teacher-project-card .points-badge {
+    background: #4a6fa5;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.teacher-project-card .project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 13px;
+    color: #5c6b82;
+}
+
+.teacher-project-card .project-meta span i {
+    margin-right: 6px;
+}
+
+.teacher-project-card .project-desc {
+    font-size: 14px;
+    color: #465166;
+    line-height: 1.6;
+}
+
+.teacher-project-card .project-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #e1f5fe;
+    color: #0277bd;
+    font-weight: 600;
+}
+
+.teacher-project-card.full .project-status {
+    background: #fdecea;
+    color: #c0392b;
+}
+
+.teacher-project-card.paused .project-status {
+    background: #fff4e5;
+    color: #f57c00;
+}
+
+.project-select-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.project-select-btn.primary {
+    background: linear-gradient(120deg, #4a6fa5, #2c3e50);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(44, 62, 80, 0.25);
+}
+
+.project-select-btn.primary:hover {
+    transform: translateY(-1px);
+}
+
+.project-select-btn.selected {
+    background: #e0f7f1;
+    color: #117a65;
+    border: 1px solid #17a589;
+    box-shadow: none;
+}
+
+.project-select-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.teacher-project-card .project-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.teacher-projects .empty-state {
+    border: 1px dashed #cbd4e3;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: #7a869c;
+    background: #f9fbff;
+}
+
+.item-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 18px;
+    transition: all 0.3s ease;
             border-left: 4px solid #4a6fa5;
         }
 

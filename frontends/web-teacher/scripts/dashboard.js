@@ -20,6 +20,346 @@ const planCard = document.getElementById('planCard');
 const competitionCard = document.getElementById('competitionCard');
 const featureCards = [policyCard, rankingCard, planCard, competitionCard].filter(Boolean);
 
+// 教师项目相关 DOM
+const teacherProjectsSection = document.getElementById('teacherProjectsSection');
+const projectForm = document.getElementById('projectForm');
+const projectFormHint = document.getElementById('projectFormHint');
+const teacherProjectsList = document.getElementById('teacherProjectsList');
+const refreshProjectsBtn = document.getElementById('refreshProjectsBtn');
+
+// 教师项目存储
+const PROJECT_COOKIE_KEY = 'pg_plus_projects';
+const TEACHER_PROJECT_STORAGE_KEY = 'teacherProjects';
+const PROJECT_COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 天
+const DEFAULT_PROJECTS = [
+    {
+        id: 'proj-research-2024',
+        title: '科研助理计划',
+        description: '参与导师课题，完成阶段任务并通过验收后即可获得对应加分。',
+        points: 12,
+        deadline: '2024-06-30',
+        slots: 15,
+        selectedCount: 3,
+        status: 'active',
+        createdAt: '2024-04-15T08:00:00.000Z',
+        updatedAt: '2024-04-20T08:00:00.000Z'
+    },
+    {
+        id: 'proj-mentor-2024',
+        title: '创新创业工作坊',
+        description: '导师团队带领完成创新课题，提交结题报告即可申请加分。',
+        points: 10,
+        deadline: '2024-07-15',
+        slots: 20,
+        selectedCount: 5,
+        status: 'active',
+        createdAt: '2024-04-18T08:00:00.000Z',
+        updatedAt: '2024-04-21T08:00:00.000Z'
+    }
+];
+
+let teacherProjects = [];
+let projectsSignature = '';
+let projectsSyncTimer = null;
+let isTeacherLoggedIn = false;
+
+// 工具函数
+function generateProjectId() {
+    return `proj-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+function getCookieValue(name) {
+    const match = document.cookie.split('; ').find(row => row.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.split('=')[1]) : '';
+}
+
+function readProjectsCookie() {
+    try {
+        const cookieValue = getCookieValue(PROJECT_COOKIE_KEY);
+        if (!cookieValue) {
+            return [];
+        }
+        const parsed = JSON.parse(cookieValue);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+        console.warn('解析教师项目 Cookie 失败', err);
+        return [];
+    }
+}
+
+function writeProjectsCookie(projects) {
+    try {
+        const payload = encodeURIComponent(JSON.stringify(projects));
+        document.cookie = `${PROJECT_COOKIE_KEY}=${payload}; path=/; max-age=${PROJECT_COOKIE_MAX_AGE}`;
+    } catch (err) {
+        console.warn('写入教师项目 Cookie 失败', err);
+    }
+}
+
+function readProjectsFromLocal() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(TEACHER_PROJECT_STORAGE_KEY) || '[]');
+        return Array.isArray(stored) ? stored : [];
+    } catch {
+        return [];
+    }
+}
+
+function sanitizeProject(project = {}) {
+    const normalized = { ...project };
+    normalized.id = typeof normalized.id === 'string' ? normalized.id : generateProjectId();
+    normalized.title = (normalized.title || '未命名项目').trim();
+    normalized.description = (normalized.description || '暂无描述').trim();
+    normalized.points = Number.isFinite(Number(normalized.points)) ? Math.max(0, Number(normalized.points)) : 0;
+    normalized.slots = Math.max(1, Number(normalized.slots) || 1);
+    const selected = Number.isFinite(Number(normalized.selectedCount)) ? Number(normalized.selectedCount) : 0;
+    normalized.selectedCount = Math.min(Math.max(0, selected), normalized.slots);
+    normalized.deadline = normalized.deadline || '';
+    normalized.status = normalized.status === 'paused' ? 'paused' : 'active';
+    normalized.createdAt = normalized.createdAt || new Date().toISOString();
+    normalized.updatedAt = normalized.updatedAt || normalized.createdAt;
+    return normalized;
+}
+
+function updateProjectsCaches() {
+    projectsSignature = JSON.stringify(teacherProjects);
+    localStorage.setItem(TEACHER_PROJECT_STORAGE_KEY, JSON.stringify(teacherProjects));
+}
+
+function persistTeacherProjects() {
+    teacherProjects = teacherProjects.map(sanitizeProject);
+    updateProjectsCaches();
+    writeProjectsCookie(teacherProjects);
+}
+
+function initializeTeacherProjectsStore() {
+    const cookieProjects = readProjectsCookie();
+    if (cookieProjects.length) {
+        teacherProjects = cookieProjects.map(sanitizeProject);
+        updateProjectsCaches();
+        return;
+    }
+
+    const storedProjects = readProjectsFromLocal();
+    if (storedProjects.length) {
+        teacherProjects = storedProjects.map(sanitizeProject);
+        persistTeacherProjects();
+        return;
+    }
+
+    teacherProjects = DEFAULT_PROJECTS.map(project => ({ ...project }));
+    persistTeacherProjects();
+}
+
+function syncProjectsFromCookie(options = {}) {
+    const cookieProjects = readProjectsCookie();
+    if (!cookieProjects.length) {
+        return;
+    }
+
+    const normalized = cookieProjects.map(sanitizeProject);
+    const nextSignature = JSON.stringify(normalized);
+    if (nextSignature === projectsSignature) {
+        return;
+    }
+
+    teacherProjects = normalized;
+    updateProjectsCaches();
+    if (!options.skipRender && isTeacherLoggedIn) {
+        renderTeacherProjects();
+    }
+}
+
+function startProjectsWatcher() {
+    if (projectsSyncTimer) {
+        return;
+    }
+    projectsSyncTimer = setInterval(() => syncProjectsFromCookie(), 5000);
+    window.addEventListener('focus', () => syncProjectsFromCookie());
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            syncProjectsFromCookie();
+        }
+    });
+}
+
+function renderTeacherProjects() {
+    if (!teacherProjectsList) {
+        return;
+    }
+
+    if (!teacherProjects.length) {
+        teacherProjectsList.innerHTML = `
+            <div class="project-empty">
+                暂无发布的项目，请使用上方表单创建一个新的加分项目。
+            </div>
+        `;
+        return;
+    }
+
+    teacherProjectsList.innerHTML = teacherProjects.map(project => {
+        const isPaused = project.status === 'paused';
+        const slotsLeft = Math.max(project.slots - project.selectedCount, 0);
+        return `
+            <div class="teacher-project-card ${isPaused ? 'paused' : ''}" data-project-id="${project.id}">
+                <div class="project-card-header">
+                    <h3>${project.title}</h3>
+                    <span class="points-badge">+${project.points}分</span>
+                </div>
+                <p class="project-description">${project.description}</p>
+                <div class="project-meta">
+                    <span><i class="fas fa-calendar-alt"></i> 截止：${project.deadline || '待定'}</span>
+                    <span><i class="fas fa-users"></i> 报名：${project.selectedCount}/${project.slots}</span>
+                    <span><i class="fas fa-inbox"></i> 剩余名额：${slotsLeft}</span>
+                    <span class="status-pill ${isPaused ? 'paused' : ''}">
+                        ${isPaused ? '暂停中' : '进行中'}
+                    </span>
+                </div>
+                <div class="project-actions">
+                    <button class="project-action-btn toggle" data-action="toggle">
+                        ${isPaused ? '重新启用' : '暂停项目'}
+                    </button>
+                    <button class="project-action-btn delete" data-action="delete">删除</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function setProjectFormDisabled(disabled) {
+    if (!projectForm) {
+        return;
+    }
+    projectForm.querySelectorAll('input, textarea, button').forEach(element => {
+        element.disabled = disabled;
+    });
+}
+
+function showProjectFormHint(message = '', type = 'info') {
+    if (!projectFormHint) {
+        return;
+    }
+    projectFormHint.textContent = message;
+    projectFormHint.classList.remove('success', 'error');
+    if (type === 'success') {
+        projectFormHint.classList.add('success');
+    } else if (type === 'error') {
+        projectFormHint.classList.add('error');
+    }
+}
+
+function updateTeacherProjectsAuthState(loggedIn) {
+    if (!teacherProjectsSection) {
+        return;
+    }
+    teacherProjectsSection.classList.toggle('disabled', !loggedIn);
+    setProjectFormDisabled(!loggedIn);
+
+    if (!loggedIn) {
+        if (teacherProjectsList) {
+            teacherProjectsList.innerHTML = `
+                <div class="project-empty">登录后可创建和管理加分项目</div>
+            `;
+        }
+        showProjectFormHint('请先登录后再发布新项目');
+    } else {
+        showProjectFormHint('');
+        renderTeacherProjects();
+    }
+}
+
+function handleProjectFormSubmit(event) {
+    event.preventDefault();
+    if (!isTeacherLoggedIn) {
+        showProjectFormHint('请先登录再发布项目', 'error');
+        return;
+    }
+
+    const formData = new FormData(projectForm);
+    const title = (formData.get('projectTitle') || '').trim();
+    const description = (formData.get('projectDescription') || '').trim();
+    const points = Number(formData.get('projectPoints'));
+    const deadline = formData.get('projectDeadline') || '';
+    const slots = Number(formData.get('projectSlots'));
+
+    if (!title || !description || !deadline || !points || !slots) {
+        showProjectFormHint('请完整填写项目信息', 'error');
+        return;
+    }
+
+    const newProject = {
+        id: generateProjectId(),
+        title,
+        description,
+        points,
+        deadline,
+        slots,
+        selectedCount: 0,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    teacherProjects.unshift(newProject);
+    persistTeacherProjects();
+    renderTeacherProjects();
+    projectForm.reset();
+    showProjectFormHint('项目已发布，学生端可刷新查看', 'success');
+}
+
+function handleProjectListClick(event) {
+    const actionButton = event.target.closest('[data-action]');
+    if (!actionButton || !teacherProjectsList) {
+        return;
+    }
+
+    const card = actionButton.closest('.teacher-project-card');
+    if (!card) {
+        return;
+    }
+
+    const projectId = card.getAttribute('data-project-id');
+    const action = actionButton.getAttribute('data-action');
+
+    if (action === 'toggle') {
+        toggleProjectStatus(projectId);
+    } else if (action === 'delete') {
+        deleteProject(projectId);
+    }
+}
+
+function toggleProjectStatus(projectId) {
+    const project = teacherProjects.find(item => item.id === projectId);
+    if (!project) {
+        return;
+    }
+    project.status = project.status === 'paused' ? 'active' : 'paused';
+    project.updatedAt = new Date().toISOString();
+    persistTeacherProjects();
+    renderTeacherProjects();
+}
+
+function deleteProject(projectId) {
+    const project = teacherProjects.find(item => item.id === projectId);
+    if (!project) {
+        return;
+    }
+    const confirmed = window.confirm(`确定要删除「${project.title}」吗？该操作无法撤销。`);
+    if (!confirmed) {
+        return;
+    }
+    teacherProjects = teacherProjects.filter(item => item.id !== projectId);
+    persistTeacherProjects();
+    renderTeacherProjects();
+}
+
+function refreshProjectsManually() {
+    syncProjectsFromCookie();
+    if (isTeacherLoggedIn) {
+        showProjectFormHint('已同步最新项目数据', 'success');
+    }
+}
+
 // 检查登录状态
 function checkLoginStatus() {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -33,6 +373,7 @@ function checkLoginStatus() {
         userNickname.textContent = userData.nickname || userData.username;
         userAccount.textContent = userData.username;
         userAvatar.textContent = (userData.nickname || userData.username).charAt(0);
+        isTeacherLoggedIn = true;
 
         // 显示内容
         showContent();
@@ -41,6 +382,7 @@ function checkLoginStatus() {
         loginBtn.style.display = 'block';
         userInfo.style.display = 'none';
         logoutBtn.style.display = 'none';
+        isTeacherLoggedIn = false;
 
         // 隐藏内容，显示登录提示
         hideContent();
@@ -49,7 +391,6 @@ function checkLoginStatus() {
 
 // 隐藏内容，显示登录提示
 function hideContent() {
-    // 左侧面板内容替换为登录提示
     chartContainer.innerHTML = `
         <div class="login-prompt">
             <i class="fas fa-user-lock"></i>
@@ -65,7 +406,6 @@ function hideContent() {
         `;
     }
 
-    // 右侧面板内容替换为登录提示
     earnedPointsList.innerHTML = `
         <div class="login-prompt">
             <i class="fas fa-user-lock"></i>
@@ -80,7 +420,8 @@ function hideContent() {
         </div>
     `;
 
-    // 禁用功能卡片
+    updateTeacherProjectsAuthState(false);
+
     featureCards.forEach(card => {
         card.classList.add('disabled');
         card.href = 'javascript:void(0)';
@@ -89,69 +430,63 @@ function hideContent() {
 
 // 显示内容
 function showContent() {
-    // 假设你从后端或其他地方获取到这两个数据
-    let reviewedCount = 72;    // 已审核人数
-    let totalCount = 100;      // 总人数
+    const reviewedCount = 72;
+    const totalCount = 100;
 
-    // 恢复左侧面板内容
     chartContainer.innerHTML = `
-<div class="pie-chart"></div>
-<div class="chart-info">
-    <div class="percentage">${reviewedCount} / ${totalCount}</div>
-    <div class="completed-text">已审核 / 总人数</div>
-</div>
+        <div class="pie-chart"></div>
+        <div class="chart-info">
+            <div class="percentage">${reviewedCount} / ${totalCount}</div>
+            <div class="completed-text">已审核 / 总人数</div>
+        </div>
     `;
 
+    earnedPointsList.innerHTML = `
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">张三</div>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">李四</div>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">王五</div>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">张7</div>
+            </div>
+        </div>
+    `;
 
+    recommendedCompetitionsList.innerHTML = `
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">陈1</div>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">陈2</div>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">陈3</div>
+            </div>
+        </div>
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">陈4</div>
+            </div>
+        </div>
+    `;
 
-    // 恢复右侧面板内容
- earnedPointsList.innerHTML = `
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">张三</div>
-</div>
-    </div>
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">李四</div>
-</div>
-    </div>
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">王五</div>
-</div>
-    </div>
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">张7</div>
-</div>
-    </div>
-`;
-
-recommendedCompetitionsList.innerHTML = `
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">陈1</div>
-</div>
-    </div>
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">陈2</div>
-</div>
-    </div>
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">陈3</div>
-</div>
-    </div>
-    <div class="item-card">
-<div class="item-header">
-    <div class="item-title">陈4</div>
-</div>
-    </div>
-`;
-
-    // 启用功能卡片
     featureCards.forEach(card => {
         card.classList.remove('disabled');
     });
@@ -168,6 +503,8 @@ recommendedCompetitionsList.innerHTML = `
     if (competitionCard) {
         competitionCard.href = '审核记录.html';
     }
+
+    updateTeacherProjectsAuthState(true);
 }
 
 // 登录按钮点击事件 - 跳转到登录页面
@@ -200,29 +537,22 @@ cancelLogout.addEventListener('click', function() {
 
 // 确认退出
 confirmLogout.addEventListener('click', function() {
-    // 执行退出登录逻辑
     logoutModal.querySelector('.modal-icon').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     logoutModal.querySelector('.modal-title').textContent = '正在退出...';
     logoutModal.querySelector('.modal-text').textContent = '请稍候，正在安全退出您的账号';
     logoutModal.querySelector('.modal-actions').style.display = 'none';
 
-    // 模拟网络请求延迟
     setTimeout(function() {
-        // 清除登录状态
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('userData');
 
-        // 重置弹窗状态
         logoutModal.style.display = 'none';
         logoutModal.querySelector('.modal-icon').innerHTML = '<i class="fas fa-sign-out-alt"></i>';
         logoutModal.querySelector('.modal-title').textContent = '确认退出登录';
         logoutModal.querySelector('.modal-text').textContent = '您确定要退出当前账号吗？退出后需要重新登录才能访问系统功能。';
         logoutModal.querySelector('.modal-actions').style.display = 'flex';
 
-        // 更新界面显示
         checkLoginStatus();
-
-        // 显示退出成功提示
         alert('已成功退出登录！');
     }, 1000);
 });
@@ -234,12 +564,45 @@ window.addEventListener('click', function(e) {
     }
 });
 
-// 页面加载时检查登录状态
+// 登陆表单
+const TEACHER_USERNAME = "teacher";
+const TEACHER_PASSWORD = "123456";
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userData', JSON.stringify({
+            username: username,
+            nickname: "张三"
+        }));
+        window.location.href = "login教师端.html";
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('loginError').innerText = '用户名或密码错误';
+    }
+});
+
+// 页面加载时初始化
 document.addEventListener('DOMContentLoaded', function() {
+    initializeTeacherProjectsStore();
     checkLoginStatus();
     addCardClickListeners();
+    startProjectsWatcher();
 
-    // 添加卡片悬停效果
+    if (projectForm) {
+        projectForm.addEventListener('submit', handleProjectFormSubmit);
+    }
+    if (teacherProjectsList) {
+        teacherProjectsList.addEventListener('click', handleProjectListClick);
+    }
+    if (refreshProjectsBtn) {
+        refreshProjectsBtn.addEventListener('click', refreshProjectsManually);
+    }
+
     document.querySelectorAll('.action-card').forEach(card => {
         card.addEventListener('mouseenter', function() {
             if (!this.classList.contains('disabled')) {
@@ -252,7 +615,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 添加项目卡片悬停效果
     document.querySelectorAll('.item-card').forEach(card => {
         card.addEventListener('mouseenter', function() {
             this.style.transform = 'translateX(5px)';
@@ -263,29 +625,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// 登录表单处理
-// 假设教师账号为 teacher 密码为 123456
-    const TEACHER_USERNAME = "teacher";
-    const TEACHER_PASSWORD = "123456";
-
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-e.preventDefault();
-const username = document.getElementById('username').value.trim();
-const password = document.getElementById('password').value.trim();
-
-if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
-    // 登录成功，保存状态到 localStorage
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userData', JSON.stringify({
-        username: username,
-        nickname: "张三" // 可自定义
-    }));
-    // 跳转到教师端页面
-    window.location.href = "login教师端.html";
-} else {
-    // 登录失败
-    document.getElementById('loginError').style.display = 'block';
-    document.getElementById('loginError').innerText = '用户名或密码错误';
-}
-    });

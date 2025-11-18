@@ -107,6 +107,53 @@
           <h2 class="section-title">待审批的学生</h2>
           <div class="items-list" id="recommendedCompetitionsList"></div>
         </div>
+
+        <div class="teacher-projects" id="teacherProjectsSection">
+          <div class="section-title-row">
+            <h2 class="section-title">教师发布加分项目</h2>
+            <button class="projects-refresh-btn" id="refreshProjectsBtn">
+              <i class="fas fa-rotate-right"></i>
+              刷新数据
+            </button>
+          </div>
+
+          <form class="project-form" id="projectForm">
+            <div class="form-grid">
+              <label class="form-field">
+                <span>项目名称</span>
+                <input type="text" id="projectTitle" name="projectTitle" placeholder="例如：科研助理计划" required />
+              </label>
+              <label class="form-field">
+                <span>加分值</span>
+                <input type="number" id="projectPoints" name="projectPoints" min="1" max="30" placeholder="如 10" required />
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>报名截止日期</span>
+                <input type="date" id="projectDeadline" name="projectDeadline" required />
+              </label>
+              <label class="form-field">
+                <span>可报名人数</span>
+                <input type="number" id="projectSlots" name="projectSlots" min="1" max="200" placeholder="如 20" required />
+              </label>
+            </div>
+
+            <label class="form-field">
+              <span>项目描述</span>
+              <textarea id="projectDescription" name="projectDescription" rows="3" placeholder="示例：完成导师布置的任务并通过验收可获得加分" required></textarea>
+            </label>
+
+            <button type="submit" class="project-submit-btn">
+              <i class="fas fa-paper-plane"></i>
+              发布项目
+            </button>
+            <div class="form-hint" id="projectFormHint"></div>
+          </form>
+
+          <div class="project-list" id="teacherProjectsList"></div>
+        </div>
       </div>
     </div>
 
