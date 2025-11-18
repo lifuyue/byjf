@@ -21,6 +21,33 @@ const rankingCard = document.getElementById('rankingCard');
 const planCard = document.getElementById('planCard');
 const competitionCard = document.getElementById('competitionCard');
 
+const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
+const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+const PROGRAMS_API_BASE = `${API_BASE}/programs`;
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+async function apiRequest(path, options = {}) {
+    const url = `${PROGRAMS_API_BASE}${path}`;
+    const payload = {
+        credentials: 'include',
+        ...options,
+        headers: {
+            ...JSON_HEADERS,
+            ...(options.headers || {})
+        }
+    };
+    const response = await fetch(url, payload);
+    if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        const message = detail.detail || detail.message || `请求失败（${response.status}）`;
+        throw new Error(message);
+    }
+    if (response.status === 204) {
+        return null;
+    }
+    return response.json();
+}
+
 // 教师发布项目 DOM
 const teacherProjectsSection = document.getElementById('teacherProjectsSection');
 const teacherProjectsList = document.getElementById('teacherProjectsList');
@@ -40,13 +67,6 @@ let userPointsData = {
 };
 
 // 教师项目共享配置
-const PROJECT_COOKIE_KEY = 'pg_plus_projects';
-const STUDENT_PROJECT_CACHE_KEY = 'studentTeacherProjectsCache';
-const STUDENT_SELECTION_KEY = 'studentProjectSelections';
-const PROJECT_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
-const VOLUNTEER_COOKIE_KEY = 'pg_plus_volunteer_records';
-const STUDENT_VOLUNTEER_CACHE_KEY = 'studentVolunteerRecordsCache';
-const VOLUNTEER_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 const REVIEW_STAGES = ['stage1', 'stage2', 'stage3'];
 
 const DEFAULT_TEACHER_PROJECTS = [
@@ -118,11 +138,8 @@ const DEFAULT_VOLUNTEER_RECORDS = [
 ];
 
 let teacherProjects = [];
-let teacherProjectsSignature = '';
-let studentProjectSelections = new Set();
-let teacherProjectsWatcher = null;
+let studentProjectSelections = new Map();
 let volunteerRecords = [];
-let volunteerRecordsSignature = '';
 let volunteerEditTargetId = null;
 
 // ------------------- 公共函数 -------------------
@@ -155,204 +172,119 @@ function updatePieChart() {
     if (totalPointsElement) totalPointsElement.textContent = userPointsData.total;
 }
 
-// ------------------- 教师项目存储 -------------------
-function getCookieValue(name) {
-    const match = document.cookie.split('; ').find(row => row.startsWith(`${name}=`));
-    return match ? decodeURIComponent(match.split('=')[1]) : '';
-}
-
-function readTeacherProjectsFromCookie() {
-    try {
-        const cookieValue = getCookieValue(PROJECT_COOKIE_KEY);
-        if (!cookieValue) return [];
-        const parsed = JSON.parse(cookieValue);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-}
-
-function writeTeacherProjectsCookie(projects) {
-    try {
-        const payload = encodeURIComponent(JSON.stringify(projects));
-        document.cookie = `${PROJECT_COOKIE_KEY}=${payload}; path=/; max-age=${PROJECT_COOKIE_MAX_AGE}`;
-    } catch (err) {
-        console.warn('写入项目数据失败', err);
-    }
-}
-
-function readTeacherProjectsCache() {
-    try {
-        const cache = JSON.parse(localStorage.getItem(STUDENT_PROJECT_CACHE_KEY) || '[]');
-        return Array.isArray(cache) ? cache : [];
-    } catch {
-        return [];
-    }
-}
-
-function updateTeacherProjectsCache(projects) {
-    localStorage.setItem(STUDENT_PROJECT_CACHE_KEY, JSON.stringify(projects));
-}
-
+// ------------------- 教师项目 & 志愿工时 API -------------------
 function sanitizeProject(project = {}) {
     const normalized = { ...project };
-    normalized.id = typeof normalized.id === 'string' ? normalized.id : `proj-${Date.now()}`;
+    normalized.id = String(normalized.id || '');
     normalized.title = (normalized.title || '未命名项目').trim();
     normalized.description = (normalized.description || '暂无描述').trim();
     normalized.points = Number.isFinite(Number(normalized.points)) ? Math.max(0, Number(normalized.points)) : 0;
     normalized.slots = Math.max(1, Number(normalized.slots) || 1);
-    const selected = Number.isFinite(Number(normalized.selectedCount)) ? Number(normalized.selectedCount) : 0;
-    normalized.selectedCount = Math.min(Math.max(selected, 0), normalized.slots);
+    const selected = normalized.selectedCount ?? normalized.selected_count ?? 0;
+    normalized.selectedCount = Math.min(Math.max(Number(selected) || 0, 0), normalized.slots);
     normalized.deadline = normalized.deadline || '';
     normalized.status = normalized.status === 'paused' ? 'paused' : 'active';
-    normalized.createdAt = normalized.createdAt || new Date().toISOString();
-    normalized.updatedAt = normalized.updatedAt || normalized.createdAt;
+    normalized.createdAt = normalized.created_at || normalized.createdAt || new Date().toISOString();
+    normalized.updatedAt = normalized.updated_at || normalized.updatedAt || normalized.createdAt;
     return normalized;
 }
 
-function loadTeacherProjectsDataset() {
-    const cookieProjects = readTeacherProjectsFromCookie();
-    if (cookieProjects.length) {
-        updateTeacherProjectsCache(cookieProjects);
-        return cookieProjects;
-    }
-
-    const cachedProjects = readTeacherProjectsCache();
-    if (cachedProjects.length) {
-        return cachedProjects;
-    }
-
-    // 首次进入时写入默认示例，方便教师端和学生端同步
-    updateTeacherProjectsCache(DEFAULT_TEACHER_PROJECTS);
-    writeTeacherProjectsCookie(DEFAULT_TEACHER_PROJECTS);
-    return DEFAULT_TEACHER_PROJECTS;
+function sanitizeSelection(selection = {}) {
+    const normalized = { ...selection };
+    normalized.id = String(normalized.id || '');
+    normalized.projectId = normalized.project || normalized.project_id || '';
+    normalized.studentAccount = normalized.studentAccount || normalized.student_account || '';
+    return normalized;
 }
 
-function initializeTeacherProjectsData() {
-    teacherProjects = loadTeacherProjectsDataset().map(sanitizeProject);
-    teacherProjectsSignature = JSON.stringify(teacherProjects);
-    updateTeacherProjectsCache(teacherProjects);
-}
-
-function loadStudentSelections() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(STUDENT_SELECTION_KEY) || '[]');
-        return new Set(Array.isArray(saved) ? saved : []);
-    } catch {
-        return new Set();
-    }
-}
-
-function saveStudentSelections() {
-    localStorage.setItem(STUDENT_SELECTION_KEY, JSON.stringify(Array.from(studentProjectSelections)));
-}
-
-function persistTeacherProjects(projects) {
-    teacherProjects = projects.map(sanitizeProject);
-    teacherProjectsSignature = JSON.stringify(teacherProjects);
-    updateTeacherProjectsCache(teacherProjects);
-    writeTeacherProjectsCookie(teacherProjects);
-}
-
-// ------------------- 志愿工时存储 -------------------
 function sanitizeVolunteerRecord(record = {}) {
     const normalized = { ...record };
-    normalized.id = typeof normalized.id === 'string' ? normalized.id : `vol-${Date.now()}`;
+    normalized.id = String(normalized.id || '');
     normalized.studentName = (normalized.studentName || '未知学生').trim();
-    normalized.studentAccount = (normalized.studentAccount || '').trim();
+    normalized.studentAccount = (normalized.studentAccount || normalized.student_account || '').trim();
     normalized.activity = (normalized.activity || '未命名活动').trim();
     normalized.hours = Number.isFinite(Number(normalized.hours)) ? Math.max(0, Number(normalized.hours)) : 0;
     normalized.proof = (normalized.proof || '').trim();
-    normalized.requireOcr = Boolean(normalized.requireOcr);
+    normalized.requireOcr = Boolean(normalized.requireOcr ?? normalized.require_ocr);
     const allowed = ['pending', 'approved', 'rejected'];
     normalized.status = allowed.includes(normalized.status) ? normalized.status : 'pending';
-    normalized.reviewStage = REVIEW_STAGES.includes(normalized.reviewStage) || normalized.reviewStage === 'completed' ? normalized.reviewStage : 'stage1';
-    normalized.reviewTrail = Array.isArray(normalized.reviewTrail) ? normalized.reviewTrail : [];
-    normalized.reviewNotes = (normalized.reviewNotes || '').trim();
-    normalized.submittedVia = normalized.submittedVia === 'teacher' ? 'teacher' : 'student';
-    normalized.createdAt = normalized.createdAt || new Date().toISOString();
-    normalized.updatedAt = normalized.updatedAt || normalized.createdAt;
+    const stageValue = normalized.reviewStage || normalized.review_stage || 'stage1';
+    normalized.reviewStage = REVIEW_STAGES.includes(stageValue) || stageValue === 'completed' ? stageValue : 'stage1';
+    normalized.reviewTrail = Array.isArray(normalized.reviewTrail || normalized.review_trail) ? (normalized.reviewTrail || normalized.review_trail) : [];
+    normalized.reviewNotes = (normalized.reviewNotes || normalized.review_notes || '').trim();
+    normalized.submittedVia = normalized.submittedVia || normalized.submitted_via || 'student';
+    normalized.createdAt = normalized.createdAt || normalized.created_at || new Date().toISOString();
+    normalized.updatedAt = normalized.updatedAt || normalized.updated_at || normalized.createdAt;
     return normalized;
 }
 
-function readVolunteerRecordsFromCookie() {
+async function loadTeacherProjectsData(options = {}) {
     try {
-        const cookieValue = getCookieValue(VOLUNTEER_COOKIE_KEY);
-        if (!cookieValue) return [];
-        const parsed = JSON.parse(cookieValue);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-}
-
-function writeVolunteerRecordsCookie(records) {
-    try {
-        const payload = encodeURIComponent(JSON.stringify(records));
-        document.cookie = `${VOLUNTEER_COOKIE_KEY}=${payload}; path=/; max-age=${VOLUNTEER_COOKIE_MAX_AGE}`;
+        const projects = await apiRequest('/projects/');
+        teacherProjects = Array.isArray(projects) ? projects.map(sanitizeProject) : [];
+        if (!options.skipRender && teacherProjectsSection && !teacherProjectsSection.classList.contains('disabled')) {
+            renderTeacherProjectsForStudent();
+        }
     } catch (error) {
-        console.warn('写入志愿记录 Cookie 失败', error);
+        console.error('获取教师项目失败', error);
+        if (!teacherProjects.length) {
+            teacherProjects = DEFAULT_TEACHER_PROJECTS.map(sanitizeProject);
+            if (!options.skipRender && teacherProjectsList) {
+                renderTeacherProjectsForStudent();
+            }
+        }
     }
 }
 
-function readVolunteerRecordsCache() {
+async function loadStudentSelectionsFromApi() {
+    const profile = getCurrentStudentProfile();
+    const account = profile.username || '';
+    if (!account) {
+        studentProjectSelections = new Map();
+        return;
+    }
     try {
-        const cache = JSON.parse(localStorage.getItem(STUDENT_VOLUNTEER_CACHE_KEY) || '[]');
-        return Array.isArray(cache) ? cache : [];
-    } catch {
-        return [];
+        const query = encodeURIComponent(account);
+        const selections = await apiRequest(`/selections/?student_account=${query}`);
+        studentProjectSelections = new Map(
+            (Array.isArray(selections) ? selections : []).map(item => {
+                const normalized = sanitizeSelection(item);
+                return [normalized.projectId, normalized];
+            })
+        );
+    } catch (error) {
+        console.error('同步项目选择失败', error);
+        if (!studentProjectSelections.size) {
+            studentProjectSelections = new Map();
+        }
     }
 }
 
-function updateVolunteerRecordsCache(records) {
-    localStorage.setItem(STUDENT_VOLUNTEER_CACHE_KEY, JSON.stringify(records));
-}
-
-function initializeVolunteerRecordsData() {
-    const cookieRecords = readVolunteerRecordsFromCookie();
-    if (cookieRecords.length) {
-        volunteerRecords = cookieRecords.map(sanitizeVolunteerRecord);
-        volunteerRecordsSignature = JSON.stringify(volunteerRecords);
-        updateVolunteerRecordsCache(volunteerRecords);
+async function loadVolunteerRecordsData(options = {}) {
+    const profile = getCurrentStudentProfile();
+    const account = profile.username || '';
+    if (!account) {
+        volunteerRecords = [];
+        if (!options.skipRender) {
+            renderStudentVolunteerRecords();
+        }
         return;
     }
-
-    const cached = readVolunteerRecordsCache();
-    if (cached.length) {
-        volunteerRecords = cached.map(sanitizeVolunteerRecord);
-        volunteerRecordsSignature = JSON.stringify(volunteerRecords);
-        writeVolunteerRecordsCookie(volunteerRecords);
-        return;
-    }
-
-    volunteerRecords = DEFAULT_VOLUNTEER_RECORDS.map(record => ({ ...record }));
-    volunteerRecordsSignature = JSON.stringify(volunteerRecords);
-    updateVolunteerRecordsCache(volunteerRecords);
-    writeVolunteerRecordsCookie(volunteerRecords);
-}
-
-function persistVolunteerRecords(records) {
-    volunteerRecords = records.map(sanitizeVolunteerRecord);
-    volunteerRecordsSignature = JSON.stringify(volunteerRecords);
-    updateVolunteerRecordsCache(volunteerRecords);
-    writeVolunteerRecordsCookie(volunteerRecords);
-}
-
-function syncVolunteerRecordsFromCookie(options = {}) {
-    const cookieRecords = readVolunteerRecordsFromCookie();
-    if (!cookieRecords.length) {
-        return;
-    }
-    const normalized = cookieRecords.map(sanitizeVolunteerRecord);
-    const nextSignature = JSON.stringify(normalized);
-    if (nextSignature === volunteerRecordsSignature) {
-        return;
-    }
-    volunteerRecords = normalized;
-    volunteerRecordsSignature = nextSignature;
-    updateVolunteerRecordsCache(volunteerRecords);
-    if (!options.skipRender && studentVolunteerSection && !studentVolunteerSection.classList.contains('disabled')) {
-        renderStudentVolunteerRecords();
+    try {
+        const query = encodeURIComponent(account);
+        const records = await apiRequest(`/volunteer-records/?student_account=${query}`);
+        volunteerRecords = Array.isArray(records) ? records.map(sanitizeVolunteerRecord) : [];
+        if (!options.skipRender && studentVolunteerSection && !studentVolunteerSection.classList.contains('disabled')) {
+            renderStudentVolunteerRecords();
+        }
+    } catch (error) {
+        console.error('获取志愿工时失败', error);
+        if (!volunteerRecords.length) {
+            volunteerRecords = DEFAULT_VOLUNTEER_RECORDS.map(sanitizeVolunteerRecord);
+            if (!options.skipRender && studentVolunteerSection && !studentVolunteerSection.classList.contains('disabled')) {
+                renderStudentVolunteerRecords();
+            }
+        }
     }
 }
 
@@ -468,7 +400,7 @@ function showStudentVolunteerFormHint(message = '', type = 'info') {
     }
 }
 
-function handleStudentVolunteerSubmit(event) {
+async function handleStudentVolunteerSubmit(event) {
     event.preventDefault();
     const profile = getCurrentStudentProfile();
     const account = profile.username || '';
@@ -489,57 +421,40 @@ function handleStudentVolunteerSubmit(event) {
         return;
     }
 
-    const timestamp = new Date().toISOString();
-    if (volunteerEditTargetId) {
-        const target = volunteerRecords.find(item => item.id === volunteerEditTargetId);
-        if (target) {
-            target.activity = activity;
-            target.hours = hours;
-            target.proof = proof;
-            target.requireOcr = requireOcr;
-            target.reviewStage = 'stage1';
-            target.status = 'pending';
-            target.reviewNotes = notes || '学生修改后等待重新审核';
-            target.reviewTrail.push({
-                stage: 'stage1',
-                reviewer: profile.nickname || profile.username || '学生',
-                note: '学生修改记录并重新提交',
-                timestamp
+    try {
+        if (volunteerEditTargetId) {
+            await apiRequest(`/volunteer-records/${volunteerEditTargetId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    activity,
+                    hours,
+                    proof,
+                    require_ocr: requireOcr,
+                    review_notes: notes
+                })
             });
-            target.updatedAt = timestamp;
+            showStudentVolunteerFormHint('已保存修改，等待重新审核', 'success');
+        } else {
+            await apiRequest('/volunteer-records/', {
+                method: 'POST',
+                body: JSON.stringify({
+                    student_name: profile.nickname || profile.username || '学生',
+                    student_account: account,
+                    activity,
+                    hours,
+                    proof,
+                    require_ocr: requireOcr,
+                    review_notes: notes,
+                    submitted_via: 'student'
+                })
+            });
+            showStudentVolunteerFormHint('已提交，老师审核后将同步状态', 'success');
         }
-        showStudentVolunteerFormHint('已保存修改，等待重新审核', 'success');
-    } else {
-        const newRecord = {
-            id: `vol-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            studentName: profile.nickname || profile.username || '学生',
-            studentAccount: account,
-            activity,
-            hours,
-            proof,
-            requireOcr,
-            status: 'pending',
-            reviewStage: 'stage1',
-            reviewTrail: [
-                {
-                    stage: 'stage1',
-                    reviewer: profile.nickname || profile.username || '学生',
-                    note: notes || '等待教师审批',
-                    timestamp
-                }
-            ],
-            reviewNotes: notes || (requireOcr ? '请求 OCR 识别后再审核' : '等待教师审核'),
-            submittedVia: 'student',
-            createdAt: timestamp,
-            updatedAt: timestamp
-        };
-        volunteerRecords.unshift(newRecord);
-        showStudentVolunteerFormHint('已提交，老师审核后将同步状态', 'success');
+        await loadVolunteerRecordsData();
+        resetVolunteerFormState();
+    } catch (error) {
+        showStudentVolunteerFormHint(error.message || '提交失败，请稍后重试', 'error');
     }
-
-    persistVolunteerRecords(volunteerRecords);
-    renderStudentVolunteerRecords();
-    resetVolunteerFormState();
 }
 
 function getStageDisplay(stage) {
@@ -605,7 +520,7 @@ function enterVolunteerEditMode(recordId) {
     showStudentVolunteerFormHint('编辑后提交将重新进入一审');
 }
 
-function deleteVolunteerRecord(recordId) {
+async function deleteVolunteerRecord(recordId) {
     const profile = getCurrentStudentProfile();
     const account = profile.username || '';
     const index = volunteerRecords.findIndex(record => record.id === recordId && record.studentAccount === account);
@@ -619,13 +534,16 @@ function deleteVolunteerRecord(recordId) {
     if (!window.confirm('确定要删除该志愿工时记录吗？')) {
         return;
     }
-    volunteerRecords.splice(index, 1);
-    persistVolunteerRecords(volunteerRecords);
-    renderStudentVolunteerRecords();
-    if (volunteerEditTargetId === recordId) {
-        resetVolunteerFormState();
+    try {
+        await apiRequest(`/volunteer-records/${recordId}/`, { method: 'DELETE' });
+        await loadVolunteerRecordsData();
+        if (volunteerEditTargetId === recordId) {
+            resetVolunteerFormState();
+        }
+        showStudentVolunteerFormHint('已删除该记录');
+    } catch (error) {
+        showStudentVolunteerFormHint(error.message || '删除失败，请稍后重试', 'error');
     }
-    showStudentVolunteerFormHint('已删除该记录');
 }
 
 function resetVolunteerFormState() {
@@ -644,7 +562,7 @@ function updateVolunteerFormTitle(text) {
 }
 
 function refreshStudentVolunteerRecords() {
-    syncVolunteerRecordsFromCookie();
+    loadVolunteerRecordsData();
     showStudentVolunteerFormHint('已同步最新状态');
 }
 
@@ -712,20 +630,20 @@ function setTeacherProjectsSectionLoggedIn(isLoggedIn) {
     }
 }
 
-function handleTeacherProjectClick(event) {
+async function handleTeacherProjectClick(event) {
     const button = event.target.closest('.project-select-btn');
     if (!button) return;
     const projectId = button.getAttribute('data-project-id');
     if (!projectId) return;
 
     if (studentProjectSelections.has(projectId)) {
-        cancelTeacherProjectSelection(projectId);
+        await cancelTeacherProjectSelection(projectId);
     } else {
-        selectTeacherProject(projectId);
+        await selectTeacherProject(projectId);
     }
 }
 
-function selectTeacherProject(projectId) {
+async function selectTeacherProject(projectId) {
     const project = teacherProjects.find(item => item.id === projectId);
     if (!project) {
         alert('该项目不存在或已被删除');
@@ -739,75 +657,51 @@ function selectTeacherProject(projectId) {
         alert('该项目名额已满，请选择其他项目。');
         return;
     }
-
-    studentProjectSelections.add(projectId);
-    project.selectedCount = Math.min(project.selectedCount + 1, project.slots);
-    project.updatedAt = new Date().toISOString();
-    saveStudentSelections();
-    persistTeacherProjects(teacherProjects);
-    renderTeacherProjectsForStudent();
-    alert('报名成功！请等待教师审核。');
+    const profile = getCurrentStudentProfile();
+    if (!profile.username) {
+        alert('请先登录账号');
+        return;
+    }
+    try {
+        const created = await apiRequest('/selections/', {
+            method: 'POST',
+            body: JSON.stringify({
+                project: projectId,
+                student_name: profile.nickname || profile.username,
+                student_account: profile.username,
+                student_id: profile.studentId || ''
+            })
+        });
+        const normalized = sanitizeSelection(created);
+        studentProjectSelections.set(projectId, normalized);
+        await loadTeacherProjectsData({ skipRender: true });
+        renderTeacherProjectsForStudent();
+        alert('报名成功！请等待教师审核。');
+    } catch (error) {
+        alert(error.message || '报名失败，请稍后再试');
+    }
 }
 
-function cancelTeacherProjectSelection(projectId) {
+async function cancelTeacherProjectSelection(projectId) {
     const project = teacherProjects.find(item => item.id === projectId);
-    if (!project) {
+    const selection = studentProjectSelections.get(projectId);
+    if (!selection) {
+        return;
+    }
+    try {
+        await apiRequest(`/selections/${selection.id}/`, { method: 'DELETE' });
         studentProjectSelections.delete(projectId);
-        saveStudentSelections();
+        await loadTeacherProjectsData({ skipRender: true });
         renderTeacherProjectsForStudent();
-        return;
+        alert('已取消选择，可重新报名其他项目。');
+    } catch (error) {
+        alert(error.message || '取消失败，请稍后再试');
     }
+}
 
-    studentProjectSelections.delete(projectId);
-    project.selectedCount = Math.max(project.selectedCount - 1, 0);
-    project.updatedAt = new Date().toISOString();
-    saveStudentSelections();
-    persistTeacherProjects(teacherProjects);
+async function refreshTeacherProjects() {
+    await Promise.all([loadTeacherProjectsData({ skipRender: true }), loadStudentSelectionsFromApi()]);
     renderTeacherProjectsForStudent();
-    alert('已取消选择，可重新报名其他项目。');
-}
-
-function syncTeacherProjectsFromCookie(options = {}) {
-    const cookieProjects = readTeacherProjectsFromCookie();
-    if (!cookieProjects.length) {
-        return;
-    }
-
-    const normalized = cookieProjects.map(sanitizeProject);
-    const nextSignature = JSON.stringify(normalized);
-    if (nextSignature === teacherProjectsSignature) {
-        return;
-    }
-
-    teacherProjects = normalized;
-    teacherProjectsSignature = nextSignature;
-    updateTeacherProjectsCache(teacherProjects);
-    if (!options.skipRender && teacherProjectsSection && !teacherProjectsSection.classList.contains('disabled')) {
-        renderTeacherProjectsForStudent();
-    }
-}
-
-function startTeacherProjectsWatcher() {
-    if (teacherProjectsWatcher) return;
-    const syncAll = () => {
-        syncTeacherProjectsFromCookie();
-        syncVolunteerRecordsFromCookie();
-    };
-    teacherProjectsWatcher = setInterval(syncAll, 5000);
-    window.addEventListener('focus', () => syncAll());
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            syncAll();
-        }
-    });
-}
-
-function refreshTeacherProjects() {
-    syncTeacherProjectsFromCookie();
-    if (refreshTeacherProjectsBtn) {
-        refreshTeacherProjectsBtn.classList.add('active');
-        setTimeout(() => refreshTeacherProjectsBtn.classList.remove('active'), 400);
-    }
 }
 
 // ------------------- 登录状态 -------------------
@@ -861,6 +755,9 @@ function hideContent() {
 
     viewMoreLink.style.display = 'none';
     earnedPointsHeader.style.display = 'block';
+
+    studentProjectSelections = new Map();
+    volunteerRecords = [];
 
     [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
         card.classList.add('disabled');
@@ -973,6 +870,8 @@ function showContent() {
 
     setTeacherProjectsSectionLoggedIn(true);
     setVolunteerSectionLoggedIn(true);
+    refreshTeacherProjects();
+    loadVolunteerRecordsData();
 }
 
 // ------------------- 事件绑定 -------------------
@@ -1028,15 +927,14 @@ window.addEventListener('click', function(e) {
 });
 
 // ------------------- 页面初始化 -------------------
-document.addEventListener('DOMContentLoaded', function() {
-    studentProjectSelections = loadStudentSelections();
-    initializeTeacherProjectsData();
-    initializeVolunteerRecordsData();
+document.addEventListener('DOMContentLoaded', async function() {
+    await Promise.all([
+        loadTeacherProjectsData({ skipRender: true }),
+        loadVolunteerRecordsData({ skipRender: true }),
+        loadStudentSelectionsFromApi()
+    ]);
     checkLoginStatus();
     addCardClickListeners();
-    startTeacherProjectsWatcher();
-    syncTeacherProjectsFromCookie({ skipRender: true });
-    syncVolunteerRecordsFromCookie({ skipRender: true });
 
     if (teacherProjectsList) {
         teacherProjectsList.addEventListener('click', handleTeacherProjectClick);

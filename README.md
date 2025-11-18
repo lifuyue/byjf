@@ -36,7 +36,7 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 - Celery、Redis、Nginx、Gunicorn/Daphne 的配置示例已经就绪（需按需开启）。
 - 所有前端位于 `frontends/`，通过 pnpm workspace 统一安装依赖、运行 dev server、执行 lint/typecheck/build。
 - `frontends/web-student`、`frontends/web-teacher` 暂以静态仪表板+脚本提供真实 UI；`frontends/web-admin` 复用了用户提供的备份模板。
-- 教师端/学生端新增“教师项目 + 志愿工时认证”示例模块：使用共享 Cookie/LocalStorage 同步数据，内置一审→二审→三审的多级流程，并预留“启用 OCR”开关；学生端可直接在线修改/删除自己的待审核记录，操作后会自动回到一审，教师端无需刷新即可看到最新状态。
+- 教师端/学生端的“教师加分项目 + 志愿工时认证”模块已经接入后端 `apps.programsapp`。所有项目、报名、志愿记录、学生审核票据均持久化在 SQLite/MySQL 中，并通过 `/api/v1/programs/*` API 统一管理，仍保留一审→二审→三审的流程、多阶段驳回/重提、OCR 标记等互动；学生端可在线编辑/删除待审记录并自动回到一审，教师端刷新即可看到数据库中的真实状态。
 
 ## 环境要求
 
@@ -57,6 +57,7 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 3. 初始化数据库并启动后端：
    ```bash
    uv run python backend/manage.py migrate --noinput
+   uv run python backend/manage.py seed_demo_data --force  # 可选：导入教师项目/志愿示例数据
    uv run python backend/manage.py runserver 0.0.0.0:8000
    ```
 4. 安装前端依赖并启动 dev server：
@@ -69,8 +70,10 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 5. 访问：
    - http://localhost:5173/gsapp/ （学生端）
    - http://localhost:5174/gsapp/admin/ （管理端）
-   - http://localhost:5175/gsapp/teacher/ （教师端）
-   - http://localhost:8000/api/v1/… （后台 API）
+- http://localhost:5175/gsapp/teacher/ （教师端）
+- http://localhost:8000/api/v1/… （后台 API）
+
+> 提示：`frontends/web-student/index.html`、`frontends/web-teacher/index.html` 默认通过 `<meta name="pg-plus-api-base" content="http://localhost:8000/api/v1">` 指向后端 API。若后端部署在其他域名/端口，可直接修改该 meta 或在构建阶段注入 `VITE_API_BASE`。
 
 ### Windows 无需 GNU Make
 
@@ -92,6 +95,7 @@ pnpm --filter pg-plus-web-teacher preview -- --host
 ## 项目结构
 
 - `backend/` – Django 工程：`core/`（设置、ASGI/Celery 启动）、`apps/`（authapp/filesapp/...）、`tests/`。上传文件位于 `backend/media/`。
+  - 新增 `apps/programsapp/`：包含教师项目、学生报名、志愿工时、多级审核模型与 `/api/v1/programs/*` 视图集，以及 `seed_demo_data` 管理命令。
 - `frontends/` – pnpm workspace：
   - `package.json`：聚合脚本，如 `pnpm dev`, `pnpm lint`, `pnpm typecheck`。
   - `web-student/`、`web-teacher/`、`web-admin/`：各自的 Vite 应用，静态 HTML/JS/CSS 存于 `index.html`、`scripts/`、`styles/`。
@@ -104,6 +108,7 @@ pnpm --filter pg-plus-web-teacher preview -- --host
 | --- | --- | --- |
 | 安装 Python 依赖 | `uv sync --all-groups` | 创建 `.venv/`，安装所有后端依赖 |
 | 运行迁移 | `uv run python backend/manage.py migrate` | SQLite 默认即可运行 |
+| 导入示例数据 | `uv run python backend/manage.py seed_demo_data --force` | 将教师项目、报名、志愿记录写入数据库，方便前端联调 |
 | 启动后端 | `uv run python backend/manage.py runserver 0.0.0.0:8000` | 读取 `.env` |
 | 启动 Celery | `uv run celery -A backend.core worker` | Redis URL 取自 `.env` |
 | 安装前端依赖 | `cd frontends && pnpm install` | 仅需执行一次 |

@@ -2,6 +2,7 @@
 
 ## Project Structure & Module Organization
 - `backend/` contains the Django project; apps live in `backend/apps/` with per-app tests under `tests/`. Shared settings and Celery config sit in `backend/core/`, and uploads land in `backend/media/`.
+- `apps/programsapp/` hosts the teacher projects + student selection + volunteer certification models, DRF viewsets (`/api/v1/programs/...`), and the `seed_demo_data` management command that hydrates SQLite/MySQL with the mock data used by the dashboards.
 - `frontends/` is a pnpm workspace. Each Vue 3 + Vite app lives under `frontends/web-student`, `frontends/web-admin`, or `frontends/web-teacher` (static `index.html`/`scripts/`/`styles/` serve as the current UI while `src/` remains scaffolded).
 - Infra assets reside in `spec/openapi.yaml`, `scripts/`, and `nginx/`; update these together when API gateways or deploy flows change.
 
@@ -10,7 +11,8 @@
 - `make setup` still runs `uv sync --all-groups`, then boots into `frontends/` to execute `pnpm install` for every SPA.
 - Windows contributors can skip GNU Make entirely: run `python -m pip install --upgrade uv`, `uv sync --all-groups`, then `cd frontends && pnpm install && pnpm dev` to spin up all dev servers. Backend commands use `uv run python backend/manage.py ...` directly。
 - `make backend-serve` remains a shortcut for `uv run python backend/manage.py migrate && uv run python backend/manage.py runserver 0.0.0.0:8000`.
-- In `frontends/`, `pnpm dev` runs all apps concurrently (student/admin/teacher on 5173/5174/5175). Use `pnpm dev:student` / `pnpm dev:teacher` / `pnpm dev:admin` for focused work, and `pnpm build`/`pnpm lint`/`pnpm typecheck` to orchestrate workspace tasks. 学生端已支持在线编辑/删除志愿工时记录，并与教师端三审流程同步。
+- Use `uv run python backend/manage.py seed_demo_data --force` whenever you need the teacher projects, selections, and volunteer records pre-populated for local demos.
+- In `frontends/`, `pnpm dev` runs all apps concurrently (student/admin/teacher on 5173/5174/5175). Use `pnpm dev:student` / `pnpm dev:teacher` / `pnpm dev:admin` for focused work, and `pnpm build` / `pnpm lint` / `pnpm typecheck` to orchestrate workspace tasks. The student/teacher dashboards now call `/api/v1/programs/...` directly; update the `<meta name="pg-plus-api-base" ...>` tag inside each `index.html` if the backend base URL changes.
 - Celery workers continue to use `make celery` / `make celery-beat` (or `uv run celery -A backend.core worker|beat`) once Redis is available.
 
 ## Coding Style & Naming Conventions

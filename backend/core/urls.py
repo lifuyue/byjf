@@ -22,6 +22,7 @@ api_v1_patterns = [
     path("scoring/", include("apps.scoringapp.urls")),
     path("policies/", include("apps.policiesapp.urls")),
     path("dicts/", include("apps.dictsapp.urls")),
+    path("programs/", include("apps.programsapp.urls")),
 ]
 
 urlpatterns = [
