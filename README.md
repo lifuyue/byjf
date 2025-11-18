@@ -57,6 +57,26 @@
 
    > 直接使用 SQLite 演示：保持 `PG_PLUS_DB_ENGINE=sqlite`（默认值）；若需 MySQL，请设置 `PG_PLUS_DB_ENGINE=mysql` 并提供 `PG_PLUS_DB_*` 凭据。
 
+   ### Windows 快速配置（无 make）
+   Windows 默认没有 GNU Make，可以直接在 PowerShell 下逐条执行以下命令完成依赖安装：
+
+   ```powershell
+   # 设置 Python 依赖（首次需要安装 uv）
+   python -m pip install --upgrade uv
+   uv sync --all-groups
+
+   # 安装三个前端的 Node 依赖
+   cd web-student ; npm install --no-audit --no-fund --loglevel=error ; cd ..
+   cd web-admin   ; npm install --no-audit --no-fund --loglevel=error ; cd ..
+   cd web-teacher ; npm install --no-audit --no-fund --loglevel=error ; cd ..
+
+   # 启动后端（等价于 make backend-serve）
+   uv run python backend/manage.py migrate --noinput
+   uv run python backend/manage.py runserver 0.0.0.0:8000
+   ```
+
+   如果希望完全复用 `make setup` / `make backend-serve` 等命令，可通过 winget / scoop / chocolatey 安装 `make`，或在 Git Bash/WSL 中运行本仓库。
+
    ## 依赖与运行方式（uv）
    - 仓库根目录使用 uv 创建 `.venv/`，`make setup` 会执行 `uv sync --all-groups` 并在各前端目录安装 Node 依赖。
    - 任意需要 Python 的命令请改用 `uv run ...`（例如 `uv run python backend/manage.py migrate`、`uv run celery ...`）。
@@ -76,6 +96,7 @@
       ```bash
       make setup
       ```
+      > Windows 无 make 时，按照“Windows 快速配置”章节手动执行 `uv sync --all-groups` 与三个 `npm install` 即可获得相同效果。
    2. **准备数据库与 Redis**
       - 默认：无需额外操作，SQLite 数据库存放在 `backend/db.sqlite3`（可通过 `PG_PLUS_SQLITE_PATH` 自定义）。
       - 切换到 MySQL：运行服务（推荐 Docker，MySQL 8 `utf8mb4`），并在 `.env` 中设置 `PG_PLUS_DB_ENGINE=mysql` 以及 `PG_PLUS_DB_*` 凭据。
