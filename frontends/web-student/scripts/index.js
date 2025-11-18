@@ -45,6 +45,8 @@ const PROJECT_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 const VOLUNTEER_COOKIE_KEY = 'pg_plus_volunteer_records';
 const STUDENT_VOLUNTEER_CACHE_KEY = 'studentVolunteerRecordsCache';
 const VOLUNTEER_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+const REVIEW_STAGES = ['stage1', 'stage2', 'stage3'];
+
 const DEFAULT_TEACHER_PROJECTS = [
     {
         id: 'proj-research-2024',
@@ -82,6 +84,12 @@ const DEFAULT_VOLUNTEER_RECORDS = [
         proof: '凭证 #A2024',
         requireOcr: false,
         status: 'approved',
+        reviewStage: 'completed',
+        reviewTrail: [
+            { stage: 'stage1', reviewer: '张老师', note: '资料完整', timestamp: '2024-04-15T10:00:00.000Z' },
+            { stage: 'stage2', reviewer: '李老师', note: '符合政策', timestamp: '2024-04-16T09:00:00.000Z' },
+            { stage: 'stage3', reviewer: '王老师', note: '通过终审', timestamp: '2024-04-18T09:00:00.000Z' }
+        ],
         reviewNotes: '资料齐全，已计入学时',
         submittedVia: 'teacher',
         createdAt: '2024-04-15T09:00:00.000Z',
@@ -96,6 +104,10 @@ const DEFAULT_VOLUNTEER_RECORDS = [
         proof: '扫描件待识别',
         requireOcr: true,
         status: 'pending',
+        reviewStage: 'stage1',
+        reviewTrail: [
+            { stage: 'stage1', reviewer: '系统', note: '等待一审', timestamp: '2024-04-20T12:00:00.000Z' }
+        ],
         reviewNotes: '',
         submittedVia: 'student',
         createdAt: '2024-04-20T12:00:00.000Z',
@@ -251,6 +263,8 @@ function sanitizeVolunteerRecord(record = {}) {
     normalized.requireOcr = Boolean(normalized.requireOcr);
     const allowed = ['pending', 'approved', 'rejected'];
     normalized.status = allowed.includes(normalized.status) ? normalized.status : 'pending';
+    normalized.reviewStage = REVIEW_STAGES.includes(normalized.reviewStage) || normalized.reviewStage === 'completed' ? normalized.reviewStage : 'stage1';
+    normalized.reviewTrail = Array.isArray(normalized.reviewTrail) ? normalized.reviewTrail : [];
     normalized.reviewNotes = (normalized.reviewNotes || '').trim();
     normalized.submittedVia = normalized.submittedVia === 'teacher' ? 'teacher' : 'student';
     normalized.createdAt = normalized.createdAt || new Date().toISOString();
@@ -370,7 +384,11 @@ function renderStudentVolunteerRecords() {
 function createStudentVolunteerCard(record) {
     const statusClass = record.status === 'approved' ? 'approved' : record.status === 'rejected' ? 'rejected' : '';
     const statusText =
-        record.status === 'approved' ? '已通过' : record.status === 'rejected' ? '已驳回' : '审核中';
+        record.status === 'approved'
+            ? '终审通过'
+            : record.status === 'rejected'
+            ? '已驳回'
+            : `${getStageDisplay(record.reviewStage)}中`;
     return `
         <div class="volunteer-card">
             <div class="card-header">
@@ -384,6 +402,9 @@ function createStudentVolunteerCard(record) {
                 <span class="status-pill ${statusClass}">
                     ${statusText}
                 </span>
+            </div>
+            <div class="student-progress">
+                ${REVIEW_STAGES.map(stage => `<span class="progress-dot ${isStudentStageCompleted(record, stage) ? 'active' : ''}"></span>`).join('')}
             </div>
             ${record.requireOcr ? `<div class="ocr-flag"><i class="fas fa-robot"></i>等待 OCR 辅助识别</div>` : ''}
             ${record.reviewNotes ? `<div class="meta"><span><i class="fas fa-comment"></i>${record.reviewNotes}</span></div>` : ''}
@@ -442,6 +463,7 @@ function handleStudentVolunteerSubmit(event) {
         return;
     }
 
+    const timestamp = new Date().toISOString();
     const newRecord = {
         id: `vol-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         studentName: profile.nickname || profile.username || '学生',
@@ -451,10 +473,19 @@ function handleStudentVolunteerSubmit(event) {
         proof,
         requireOcr,
         status: 'pending',
+        reviewStage: 'stage1',
+        reviewTrail: [
+            {
+                stage: 'stage1',
+                reviewer: profile.nickname || profile.username || '学生',
+                note: notes || '等待教师审批',
+                timestamp
+            }
+        ],
         reviewNotes: notes || (requireOcr ? '请求 OCR 识别后再审核' : '等待教师审核'),
         submittedVia: 'student',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: timestamp,
+        updatedAt: timestamp
     };
 
     volunteerRecords.unshift(newRecord);
@@ -462,6 +493,31 @@ function handleStudentVolunteerSubmit(event) {
     renderStudentVolunteerRecords();
     studentVolunteerForm.reset();
     showStudentVolunteerFormHint('已提交，老师审核后将同步状态', 'success');
+}
+
+function getStageDisplay(stage) {
+    if (stage === 'stage1') return '一审';
+    if (stage === 'stage2') return '二审';
+    if (stage === 'stage3') return '三审';
+    return '终审';
+}
+
+function isStudentStageCompleted(record, stage) {
+    if (record.status === 'approved') {
+        return true;
+    }
+    const stageIndex = REVIEW_STAGES.indexOf(stage);
+    if (stageIndex === -1) {
+        return false;
+    }
+    if (record.reviewStage === 'completed') {
+        return true;
+    }
+    const currentIndex = REVIEW_STAGES.indexOf(record.reviewStage);
+    if (currentIndex === -1) {
+        return false;
+    }
+    return currentIndex >= stageIndex;
 }
 
 function refreshStudentVolunteerRecords() {

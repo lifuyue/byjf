@@ -40,6 +40,7 @@ const PROJECT_COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 天
 const VOLUNTEER_COOKIE_KEY = 'pg_plus_volunteer_records';
 const TEACHER_VOLUNTEER_STORAGE_KEY = 'teacherVolunteerRecords';
 const VOLUNTEER_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+const STUDENT_APPROVAL_STORAGE_KEY = 'teacherStudentApprovals';
 const DEFAULT_PROJECTS = [
     {
         id: 'proj-research-2024',
@@ -67,6 +68,8 @@ const DEFAULT_PROJECTS = [
     }
 ];
 
+const REVIEW_STAGES = ['stage1', 'stage2', 'stage3'];
+
 const DEFAULT_VOLUNTEER_RECORDS = [
     {
         id: 'vol-2024-001',
@@ -77,6 +80,12 @@ const DEFAULT_VOLUNTEER_RECORDS = [
         proof: '凭证 #A2024',
         requireOcr: false,
         status: 'approved',
+        reviewStage: 'completed',
+        reviewTrail: [
+            { stage: 'stage1', reviewer: '张老师', note: '资料完整', timestamp: '2024-04-15T10:00:00.000Z' },
+            { stage: 'stage2', reviewer: '李老师', note: '符合政策', timestamp: '2024-04-16T09:00:00.000Z' },
+            { stage: 'stage3', reviewer: '王老师', note: '通过终审', timestamp: '2024-04-18T09:00:00.000Z' }
+        ],
         reviewNotes: '资料齐全，已计入学时',
         submittedVia: 'teacher',
         createdAt: '2024-04-15T09:00:00.000Z',
@@ -91,10 +100,56 @@ const DEFAULT_VOLUNTEER_RECORDS = [
         proof: '扫描件待识别',
         requireOcr: true,
         status: 'pending',
+        reviewStage: 'stage1',
+        reviewTrail: [
+            { stage: 'stage1', reviewer: '系统', note: '等待一审', timestamp: '2024-04-20T12:00:00.000Z' }
+        ],
         reviewNotes: '',
         submittedVia: 'student',
         createdAt: '2024-04-20T12:00:00.000Z',
         updatedAt: '2024-04-20T12:00:00.000Z'
+    }
+];
+
+const DEFAULT_STUDENT_APPROVALS = [
+    {
+        id: 'stu-approve-001',
+        studentName: '张明',
+        studentId: '2021012345',
+        college: '计算机科学与技术学院',
+        major: '计算机科学与技术',
+        reviewStage: 'stage2',
+        status: 'pending',
+        reviewTrail: [
+            { stage: 'stage1', reviewer: '学院初审', note: '资料齐全', timestamp: '2024-04-10T09:00:00.000Z' }
+        ],
+        reviewNotes: '待二审'
+    },
+    {
+        id: 'stu-approve-002',
+        studentName: '李四',
+        studentId: '202101002',
+        college: '计算机科学与技术学院',
+        major: '计算机科学与技术',
+        reviewStage: 'stage1',
+        status: 'pending',
+        reviewTrail: [],
+        reviewNotes: '等待一审'
+    },
+    {
+        id: 'stu-approved-003',
+        studentName: '王五',
+        studentId: '202001002',
+        college: '软件学院',
+        major: '软件工程',
+        reviewStage: 'completed',
+        status: 'approved',
+        reviewTrail: [
+            { stage: 'stage1', reviewer: '学院', note: '通过', timestamp: '2024-04-01T09:00:00.000Z' },
+            { stage: 'stage2', reviewer: '学校', note: '通过', timestamp: '2024-04-03T09:00:00.000Z' },
+            { stage: 'stage3', reviewer: '终审', note: '通过', timestamp: '2024-04-05T09:00:00.000Z' }
+        ],
+        reviewNotes: '终审通过'
     }
 ];
 
@@ -104,6 +159,7 @@ let projectsSyncTimer = null;
 let isTeacherLoggedIn = false;
 let volunteerRecords = [];
 let volunteerSignature = '';
+let studentApprovalRecords = [];
 
 // 工具函数
 function generateProjectId() {
@@ -272,6 +328,51 @@ function renderTeacherProjects() {
     }).join('');
 }
 
+function renderStudentApprovals() {
+    if (!earnedPointsList || !recommendedCompetitionsList) {
+        return;
+    }
+
+    const history = studentApprovalRecords.filter(record => record.status !== 'pending');
+    const pending = studentApprovalRecords.filter(record => record.status === 'pending');
+
+    earnedPointsList.innerHTML = history.length
+        ? history.map(record => createStudentApprovalCard(record, { showActions: false })).join('')
+        : `<div class="item-card">暂无已审核学生</div>`;
+
+    recommendedCompetitionsList.innerHTML = pending.length
+        ? pending.map(record => createStudentApprovalCard(record, { showActions: true })).join('')
+        : `<div class="item-card">暂无待审核学生</div>`;
+}
+
+function createStudentApprovalCard(record, options = { showActions: false }) {
+    const statusClass = record.status === 'approved' ? 'approved' : record.status === 'rejected' ? 'rejected' : '';
+    const stageDisplay = record.status === 'approved' ? '终审完成' : record.status === 'rejected' ? '已驳回' : `${getStageDisplay(record.reviewStage)}中`;
+    return `
+        <div class="item-card student-approval-card" data-student-approval-id="${record.id}">
+            <div class="item-header">
+                <div class="item-title">${record.studentName}<small>（${record.studentId}）</small></div>
+                <span class="item-points status-pill ${statusClass}">${stageDisplay}</span>
+            </div>
+            <div class="item-desc">${record.college} · ${record.major}</div>
+            <div class="review-progress">
+                ${REVIEW_STAGES.map(stage => `<span class="progress-dot ${isStageCompleted(record, stage) ? 'active' : ''}"></span>`).join('')}
+            </div>
+            ${record.reviewNotes ? `<div class="item-desc">${record.reviewNotes}</div>` : ''}
+            ${
+                options.showActions
+                    ? `
+                        <div class="volunteer-actions">
+                            <button class="volunteer-action-btn approve" data-action="student-advance">提交${getNextReviewLabel(record.reviewStage)}</button>
+                            <button class="volunteer-action-btn reject" data-action="student-reject">驳回</button>
+                        </div>
+                    `
+                    : ''
+            }
+        </div>
+    `;
+}
+
 function generateVolunteerId() {
     return `vol-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
@@ -287,6 +388,8 @@ function sanitizeVolunteerRecord(record = {}) {
     normalized.requireOcr = Boolean(normalized.requireOcr);
     const allowedStatus = ['pending', 'approved', 'rejected'];
     normalized.status = allowedStatus.includes(normalized.status) ? normalized.status : 'pending';
+    normalized.reviewStage = REVIEW_STAGES.includes(normalized.reviewStage) || normalized.reviewStage === 'completed' ? normalized.reviewStage : 'stage1';
+    normalized.reviewTrail = Array.isArray(normalized.reviewTrail) ? normalized.reviewTrail : [];
     normalized.reviewNotes = (normalized.reviewNotes || '').trim();
     normalized.submittedVia = normalized.submittedVia === 'teacher' ? 'teacher' : 'student';
     normalized.createdAt = normalized.createdAt || new Date().toISOString();
@@ -356,6 +459,44 @@ function initializeVolunteerStore() {
     persistVolunteerRecords();
 }
 
+function sanitizeStudentApproval(record = {}) {
+    const normalized = { ...record };
+    normalized.id = typeof normalized.id === 'string' ? normalized.id : `stu-approve-${Date.now()}`;
+    normalized.studentName = (normalized.studentName || '未知学生').trim();
+    normalized.studentId = (normalized.studentId || '未填写').trim();
+    normalized.college = (normalized.college || '未知学院').trim();
+    normalized.major = (normalized.major || '未知专业').trim();
+    normalized.reviewStage = REVIEW_STAGES.includes(normalized.reviewStage) || normalized.reviewStage === 'completed' ? normalized.reviewStage : 'stage1';
+    normalized.status = normalized.status === 'approved' ? 'approved' : normalized.status === 'rejected' ? 'rejected' : 'pending';
+    normalized.reviewTrail = Array.isArray(normalized.reviewTrail) ? normalized.reviewTrail : [];
+    normalized.reviewNotes = (normalized.reviewNotes || '').trim();
+    return normalized;
+}
+
+function readStudentApprovalsFromLocal() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(STUDENT_APPROVAL_STORAGE_KEY) || '[]');
+        return Array.isArray(stored) ? stored : [];
+    } catch {
+        return [];
+    }
+}
+
+function persistStudentApprovals() {
+    studentApprovalRecords = studentApprovalRecords.map(sanitizeStudentApproval);
+    localStorage.setItem(STUDENT_APPROVAL_STORAGE_KEY, JSON.stringify(studentApprovalRecords));
+}
+
+function initializeStudentApprovalsStore() {
+    const stored = readStudentApprovalsFromLocal();
+    if (stored.length) {
+        studentApprovalRecords = stored.map(sanitizeStudentApproval);
+        return;
+    }
+    studentApprovalRecords = DEFAULT_STUDENT_APPROVALS.map(record => sanitizeStudentApproval(record));
+    persistStudentApprovals();
+}
+
 function syncVolunteerRecordsFromCookie(options = {}) {
     const cookieRecords = readVolunteerCookie();
     if (!cookieRecords.length) {
@@ -394,6 +535,8 @@ function renderVolunteerRecords() {
 
 function createVolunteerCardHtml(record) {
     const statusClass = record.status === 'approved' ? 'approved' : record.status === 'rejected' ? 'rejected' : '';
+    const stageDisplay = record.status === 'approved' ? '已完成' : record.status === 'rejected' ? '已驳回' : `${getStageDisplay(record.reviewStage)}中`;
+    const stageProgress = record.status === 'approved' ? REVIEW_STAGES.length : record.status === 'rejected' ? 0 : Math.max(1, REVIEW_STAGES.indexOf(record.reviewStage) + 1);
     return `
         <div class="volunteer-card" data-volunteer-id="${record.id}">
             <div class="card-header">
@@ -407,8 +550,11 @@ function createVolunteerCardHtml(record) {
                     </div>
                 </div>
                 <span class="status-pill ${statusClass}">
-                    ${record.status === 'approved' ? '已通过' : record.status === 'rejected' ? '已驳回' : '待审核'}
+                    ${stageDisplay}
                 </span>
+            </div>
+            <div class="review-progress" data-progress="${stageProgress}">
+                ${REVIEW_STAGES.map(stage => `<span class="progress-dot ${isStageCompleted(record, stage) ? 'active' : ''}"></span>`).join('')}
             </div>
             ${record.requireOcr ? `<div class="ocr-flag"><i class="fas fa-robot"></i>待 OCR 识别</div>` : ''}
             ${record.reviewNotes ? `<div class="volunteer-meta"><span><i class="fas fa-comment"></i>${record.reviewNotes}</span></div>` : ''}
@@ -416,7 +562,7 @@ function createVolunteerCardHtml(record) {
                 record.status === 'pending'
                     ? `
                         <div class="volunteer-actions">
-                            <button class="volunteer-action-btn approve" data-action="approve">通过</button>
+                            <button class="volunteer-action-btn approve" data-action="advance">提交${getNextReviewLabel(record.reviewStage)}审核</button>
                             <button class="volunteer-action-btn reject" data-action="reject">驳回</button>
                         </div>
                     `
@@ -424,6 +570,43 @@ function createVolunteerCardHtml(record) {
             }
         </div>
     `;
+}
+
+function getStageDisplay(stage) {
+    if (stage === 'stage1') return '一审';
+    if (stage === 'stage2') return '二审';
+    if (stage === 'stage3') return '三审';
+    return '终审';
+}
+
+function getNextReviewLabel(currentStage) {
+    if (currentStage === 'stage1') return '二审';
+    if (currentStage === 'stage2') return '三审';
+    if (currentStage === 'stage3') return '终审';
+    return '终审';
+}
+
+function isStageCompleted(record, stage) {
+    if (record.status === 'approved') {
+        return true;
+    }
+    const stageIndex = REVIEW_STAGES.indexOf(stage);
+    if (stageIndex === -1) {
+        return false;
+    }
+    if (record.reviewStage === 'completed') {
+        return true;
+    }
+    const currentIndex = REVIEW_STAGES.indexOf(record.reviewStage);
+    if (currentIndex === -1) {
+        return false;
+    }
+    return currentIndex >= stageIndex;
+}
+
+function getCurrentReviewerName() {
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    return userData.nickname || userData.username || '教师';
 }
 
 function setVolunteerFormDisabled(disabled) {
@@ -490,6 +673,7 @@ function handleVolunteerFormSubmit(event) {
         return;
     }
 
+    const timestamp = new Date().toISOString();
     const newRecord = {
         id: generateVolunteerId(),
         studentName,
@@ -498,11 +682,20 @@ function handleVolunteerFormSubmit(event) {
         hours,
         proof,
         requireOcr,
-        status: requireOcr ? 'pending' : 'approved',
-        reviewNotes: notes || (requireOcr ? '等待 OCR 识别结果' : '教师直接录入'),
+        status: 'pending',
+        reviewStage: 'stage1',
+        reviewTrail: [
+            {
+                stage: 'stage1',
+                reviewer: getCurrentReviewerName(),
+                note: notes || '教师录入，等待一审',
+                timestamp
+            }
+        ],
+        reviewNotes: notes || (requireOcr ? '等待 OCR 识别结果' : '等待一审'),
         submittedVia: 'teacher',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: timestamp,
+        updatedAt: timestamp
     };
 
     volunteerRecords.unshift(newRecord);
@@ -523,20 +716,45 @@ function handleVolunteerListClick(event) {
     }
     const recordId = card.getAttribute('data-volunteer-id');
     const action = actionButton.getAttribute('data-action');
-    if (action === 'approve') {
-        approveVolunteerRecord(recordId);
+    if (action === 'advance') {
+        advanceVolunteerRecord(recordId);
     } else if (action === 'reject') {
         rejectVolunteerRecord(recordId);
     }
 }
 
-function approveVolunteerRecord(recordId) {
+function advanceVolunteerRecord(recordId) {
     const record = volunteerRecords.find(item => item.id === recordId);
     if (!record) {
         return;
     }
-    record.status = 'approved';
-    record.reviewNotes = record.reviewNotes || '已通过';
+    const currentStageIndex = REVIEW_STAGES.indexOf(record.reviewStage);
+    if (currentStageIndex === -1) {
+        record.reviewStage = 'stage1';
+    }
+
+    if (record.reviewStage === 'stage3') {
+        record.status = 'approved';
+        record.reviewStage = 'completed';
+        record.reviewTrail.push({
+            stage: 'stage3',
+            reviewer: getCurrentReviewerName(),
+            note: '终审完成',
+            timestamp: new Date().toISOString()
+        });
+        record.reviewNotes = record.reviewNotes || '终审通过';
+    } else {
+        const nextStage = REVIEW_STAGES[Math.min(currentStageIndex + 1, REVIEW_STAGES.length - 1)];
+        record.reviewTrail.push({
+            stage: record.reviewStage,
+            reviewer: getCurrentReviewerName(),
+            note: `通过${getStageDisplay(record.reviewStage)}`,
+            timestamp: new Date().toISOString()
+        });
+        record.reviewStage = nextStage;
+        record.reviewNotes = `进入${getStageDisplay(nextStage)}流程`;
+    }
+
     record.updatedAt = new Date().toISOString();
     persistVolunteerRecords();
     renderVolunteerRecords();
@@ -553,9 +771,86 @@ function rejectVolunteerRecord(recordId) {
     }
     record.status = 'rejected';
     record.reviewNotes = reason || '未提供原因';
+    record.reviewStage = 'stage1';
+    record.reviewTrail.push({
+        stage: 'rejected',
+        reviewer: getCurrentReviewerName(),
+        note: reason || '未提供原因',
+        timestamp: new Date().toISOString()
+    });
     record.updatedAt = new Date().toISOString();
     persistVolunteerRecords();
     renderVolunteerRecords();
+}
+
+function handleStudentApprovalListClick(event) {
+    const actionButton = event.target.closest('[data-action]');
+    if (!actionButton) {
+        return;
+    }
+    const card = actionButton.closest('.student-approval-card');
+    if (!card) {
+        return;
+    }
+    const recordId = card.getAttribute('data-student-approval-id');
+    const action = actionButton.getAttribute('data-action');
+    if (action === 'student-advance') {
+        advanceStudentApproval(recordId);
+    } else if (action === 'student-reject') {
+        rejectStudentApproval(recordId);
+    }
+}
+
+function advanceStudentApproval(recordId) {
+    const record = studentApprovalRecords.find(item => item.id === recordId);
+    if (!record) {
+        return;
+    }
+    if (record.reviewStage === 'stage3') {
+        record.status = 'approved';
+        record.reviewStage = 'completed';
+        record.reviewTrail.push({
+            stage: 'stage3',
+            reviewer: getCurrentReviewerName(),
+            note: '终审通过',
+            timestamp: new Date().toISOString()
+        });
+        record.reviewNotes = '终审通过';
+    } else {
+        record.reviewTrail.push({
+            stage: record.reviewStage,
+            reviewer: getCurrentReviewerName(),
+            note: `${getStageDisplay(record.reviewStage)}完成`,
+            timestamp: new Date().toISOString()
+        });
+        const currentIndex = REVIEW_STAGES.indexOf(record.reviewStage);
+        record.reviewStage = REVIEW_STAGES[Math.min(currentIndex + 1, REVIEW_STAGES.length - 1)];
+        record.reviewNotes = `进入${getStageDisplay(record.reviewStage)}流程`;
+    }
+    persistStudentApprovals();
+    renderStudentApprovals();
+}
+
+function rejectStudentApproval(recordId) {
+    const record = studentApprovalRecords.find(item => item.id === recordId);
+    if (!record) {
+        return;
+    }
+    const reason = window.prompt('请输入驳回原因', record.reviewNotes || '');
+    if (reason === null) {
+        return;
+    }
+    record.status = 'rejected';
+    record.reviewStage = 'stage1';
+    record.reviewNotes = reason || '未提供原因';
+    record.reviewTrail.push({
+        stage: 'rejected',
+        reviewer: getCurrentReviewerName(),
+        note: reason || '未提供原因',
+        timestamp: new Date().toISOString()
+    });
+    persistStudentApprovals();
+    renderStudentApprovals();
 }
 
 function refreshVolunteerRecordsManually() {
@@ -781,51 +1076,7 @@ function showContent() {
         </div>
     `;
 
-    earnedPointsList.innerHTML = `
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">张三</div>
-            </div>
-        </div>
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">李四</div>
-            </div>
-        </div>
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">王五</div>
-            </div>
-        </div>
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">张7</div>
-            </div>
-        </div>
-    `;
-
-    recommendedCompetitionsList.innerHTML = `
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">陈1</div>
-            </div>
-        </div>
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">陈2</div>
-            </div>
-        </div>
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">陈3</div>
-            </div>
-        </div>
-        <div class="item-card">
-            <div class="item-header">
-                <div class="item-title">陈4</div>
-            </div>
-        </div>
-    `;
+    renderStudentApprovals();
 
     featureCards.forEach(card => {
         card.classList.remove('disabled');
@@ -931,6 +1182,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     initializeTeacherProjectsStore();
     initializeVolunteerStore();
+    initializeStudentApprovalsStore();
     checkLoginStatus();
     addCardClickListeners();
     startProjectsWatcher();
@@ -957,6 +1209,10 @@ document.addEventListener('DOMContentLoaded', function() {
         refreshVolunteerBtn.addEventListener('click', refreshVolunteerRecordsManually);
     }
     syncVolunteerRecordsFromCookie({ skipRender: true });
+    renderStudentApprovals();
+    if (recommendedCompetitionsList) {
+        recommendedCompetitionsList.addEventListener('click', handleStudentApprovalListClick);
+    }
 
     document.querySelectorAll('.action-card').forEach(card => {
         card.addEventListener('mouseenter', function() {

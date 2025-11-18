@@ -705,6 +705,23 @@ body {
     color: #b91c1c;
 }
 
+.review-progress {
+    display: flex;
+    gap: 6px;
+    margin: 6px 0;
+}
+
+.progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e2e8f0;
+}
+
+.progress-dot.active {
+    background: #4a6fa5;
+}
+
 .volunteer-meta {
     display: flex;
     flex-direction: column;
