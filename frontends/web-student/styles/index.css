@@ -662,6 +662,30 @@ body {
     gap: 12px;
 }
 
+.volunteer-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.volunteer-form-header h3 {
+    font-size: 16px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.volunteer-cancel {
+    border: none;
+    background: transparent;
+    color: #4a6fa5;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.volunteer-cancel.hidden {
+    display: none;
+}
+
 .volunteer-form .form-field {
     display: flex;
     flex-direction: column;

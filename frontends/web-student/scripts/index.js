@@ -30,6 +30,8 @@ const studentVolunteerList = document.getElementById('studentVolunteerList');
 const studentVolunteerForm = document.getElementById('studentVolunteerForm');
 const studentVolunteerFormHint = document.getElementById('studentVolunteerFormHint');
 const refreshStudentVolunteerBtn = document.getElementById('refreshStudentVolunteerBtn');
+const studentVolunteerTitle = document.getElementById('studentVolunteerFormTitle');
+const cancelVolunteerEditBtn = document.getElementById('cancelVolunteerEditBtn');
 
 // 用户进度数据
 let userPointsData = {
@@ -121,6 +123,7 @@ let studentProjectSelections = new Set();
 let teacherProjectsWatcher = null;
 let volunteerRecords = [];
 let volunteerRecordsSignature = '';
+let volunteerEditTargetId = null;
 
 // ------------------- 公共函数 -------------------
 function calculatePercentage(earned, total) {
@@ -378,10 +381,12 @@ function renderStudentVolunteerRecords() {
         return;
     }
 
-    studentVolunteerList.innerHTML = records.map(createStudentVolunteerCard).join('');
+    studentVolunteerList.innerHTML = records
+        .map(record => createStudentVolunteerCard(record, account))
+        .join('');
 }
 
-function createStudentVolunteerCard(record) {
+function createStudentVolunteerCard(record, currentAccount) {
     const statusClass = record.status === 'approved' ? 'approved' : record.status === 'rejected' ? 'rejected' : '';
     const statusText =
         record.status === 'approved'
@@ -409,6 +414,27 @@ function createStudentVolunteerCard(record) {
             ${record.requireOcr ? `<div class="ocr-flag"><i class="fas fa-robot"></i>等待 OCR 辅助识别</div>` : ''}
             ${record.reviewNotes ? `<div class="meta"><span><i class="fas fa-comment"></i>${record.reviewNotes}</span></div>` : ''}
             <div class="hours-badge">提交来源：${record.submittedVia === 'teacher' ? '教师录入' : '学生提交'}</div>
+            ${renderStudentVolunteerActions(record, currentAccount)}
+        </div>
+    `;
+}
+
+function renderStudentVolunteerActions(record, currentAccount) {
+    const canEdit =
+        record.submittedVia === 'student' &&
+        record.studentAccount === currentAccount &&
+        record.status === 'pending';
+    if (!canEdit) {
+        return '';
+    }
+    return `
+        <div class="volunteer-actions">
+            <button class="project-select-btn primary" data-action="edit-volunteer" data-record-id="${record.id}">
+                <i class="fas fa-edit"></i> 编辑
+            </button>
+            <button class="project-select-btn selected" data-action="delete-volunteer" data-record-id="${record.id}">
+                <i class="fas fa-trash"></i> 删除
+            </button>
         </div>
     `;
 }
@@ -464,35 +490,56 @@ function handleStudentVolunteerSubmit(event) {
     }
 
     const timestamp = new Date().toISOString();
-    const newRecord = {
-        id: `vol-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        studentName: profile.nickname || profile.username || '学生',
-        studentAccount: account,
-        activity,
-        hours,
-        proof,
-        requireOcr,
-        status: 'pending',
-        reviewStage: 'stage1',
-        reviewTrail: [
-            {
+    if (volunteerEditTargetId) {
+        const target = volunteerRecords.find(item => item.id === volunteerEditTargetId);
+        if (target) {
+            target.activity = activity;
+            target.hours = hours;
+            target.proof = proof;
+            target.requireOcr = requireOcr;
+            target.reviewStage = 'stage1';
+            target.status = 'pending';
+            target.reviewNotes = notes || '学生修改后等待重新审核';
+            target.reviewTrail.push({
                 stage: 'stage1',
                 reviewer: profile.nickname || profile.username || '学生',
-                note: notes || '等待教师审批',
+                note: '学生修改记录并重新提交',
                 timestamp
-            }
-        ],
-        reviewNotes: notes || (requireOcr ? '请求 OCR 识别后再审核' : '等待教师审核'),
-        submittedVia: 'student',
-        createdAt: timestamp,
-        updatedAt: timestamp
-    };
+            });
+            target.updatedAt = timestamp;
+        }
+        showStudentVolunteerFormHint('已保存修改，等待重新审核', 'success');
+    } else {
+        const newRecord = {
+            id: `vol-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            studentName: profile.nickname || profile.username || '学生',
+            studentAccount: account,
+            activity,
+            hours,
+            proof,
+            requireOcr,
+            status: 'pending',
+            reviewStage: 'stage1',
+            reviewTrail: [
+                {
+                    stage: 'stage1',
+                    reviewer: profile.nickname || profile.username || '学生',
+                    note: notes || '等待教师审批',
+                    timestamp
+                }
+            ],
+            reviewNotes: notes || (requireOcr ? '请求 OCR 识别后再审核' : '等待教师审核'),
+            submittedVia: 'student',
+            createdAt: timestamp,
+            updatedAt: timestamp
+        };
+        volunteerRecords.unshift(newRecord);
+        showStudentVolunteerFormHint('已提交，老师审核后将同步状态', 'success');
+    }
 
-    volunteerRecords.unshift(newRecord);
     persistVolunteerRecords(volunteerRecords);
     renderStudentVolunteerRecords();
-    studentVolunteerForm.reset();
-    showStudentVolunteerFormHint('已提交，老师审核后将同步状态', 'success');
+    resetVolunteerFormState();
 }
 
 function getStageDisplay(stage) {
@@ -518,6 +565,82 @@ function isStudentStageCompleted(record, stage) {
         return false;
     }
     return currentIndex >= stageIndex;
+}
+
+function handleVolunteerCardActions(event) {
+    const button = event.target.closest('[data-action]');
+    if (!button) {
+        return;
+    }
+    const recordId = button.getAttribute('data-record-id');
+    if (!recordId) {
+        return;
+    }
+    const action = button.getAttribute('data-action');
+    if (action === 'edit-volunteer') {
+        enterVolunteerEditMode(recordId);
+    } else if (action === 'delete-volunteer') {
+        deleteVolunteerRecord(recordId);
+    }
+}
+
+function enterVolunteerEditMode(recordId) {
+    if (!studentVolunteerForm) {
+        return;
+    }
+    const profile = getCurrentStudentProfile();
+    const account = profile.username || '';
+    const target = volunteerRecords.find(record => record.id === recordId && record.studentAccount === account);
+    if (!target || target.status !== 'pending' || target.submittedVia !== 'student') {
+        return;
+    }
+    volunteerEditTargetId = recordId;
+    studentVolunteerForm.studentVolunteerActivity.value = target.activity;
+    studentVolunteerForm.studentVolunteerHours.value = target.hours;
+    studentVolunteerForm.studentVolunteerProof.value = target.proof || '';
+    studentVolunteerForm.studentVolunteerNotes.value = target.reviewNotes || '';
+    studentVolunteerForm.studentVolunteerRequireOcr.checked = Boolean(target.requireOcr);
+    updateVolunteerFormTitle('编辑志愿工时');
+    cancelVolunteerEditBtn?.classList.remove('hidden');
+    showStudentVolunteerFormHint('编辑后提交将重新进入一审');
+}
+
+function deleteVolunteerRecord(recordId) {
+    const profile = getCurrentStudentProfile();
+    const account = profile.username || '';
+    const index = volunteerRecords.findIndex(record => record.id === recordId && record.studentAccount === account);
+    if (index === -1) {
+        return;
+    }
+    const target = volunteerRecords[index];
+    if (target.status !== 'pending' || target.submittedVia !== 'student') {
+        return;
+    }
+    if (!window.confirm('确定要删除该志愿工时记录吗？')) {
+        return;
+    }
+    volunteerRecords.splice(index, 1);
+    persistVolunteerRecords(volunteerRecords);
+    renderStudentVolunteerRecords();
+    if (volunteerEditTargetId === recordId) {
+        resetVolunteerFormState();
+    }
+    showStudentVolunteerFormHint('已删除该记录');
+}
+
+function resetVolunteerFormState() {
+    volunteerEditTargetId = null;
+    if (studentVolunteerForm) {
+        studentVolunteerForm.reset();
+    }
+    updateVolunteerFormTitle('提交志愿工时');
+    cancelVolunteerEditBtn?.classList.add('hidden');
+}
+
+function updateVolunteerFormTitle(text) {
+    if (studentVolunteerTitle) {
+        studentVolunteerTitle.textContent = text;
+    }
 }
 
 function refreshStudentVolunteerRecords() {
@@ -924,8 +1047,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (studentVolunteerForm) {
         studentVolunteerForm.addEventListener('submit', handleStudentVolunteerSubmit);
     }
+    if (studentVolunteerList) {
+        studentVolunteerList.addEventListener('click', handleVolunteerCardActions);
+    }
     if (refreshStudentVolunteerBtn) {
         refreshStudentVolunteerBtn.addEventListener('click', refreshStudentVolunteerRecords);
+    }
+    if (cancelVolunteerEditBtn) {
+        cancelVolunteerEditBtn.addEventListener('click', function() {
+            resetVolunteerFormState();
+            showStudentVolunteerFormHint('已取消编辑');
+        });
     }
 
     document.querySelectorAll('.action-card').forEach(card => {
