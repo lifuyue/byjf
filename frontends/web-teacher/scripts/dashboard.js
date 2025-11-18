@@ -18,6 +18,7 @@ const policyCard = document.getElementById('policyCard');
 const rankingCard = document.getElementById('rankingCard');
 const planCard = document.getElementById('planCard');
 const competitionCard = document.getElementById('competitionCard');
+const featureCards = [policyCard, rankingCard, planCard, competitionCard].filter(Boolean);
 
 // 检查登录状态
 function checkLoginStatus() {
@@ -56,11 +57,13 @@ function hideContent() {
         </div>
     `;
 
-    progressDetails.innerHTML = `
-        <div class="login-prompt">
-            <div class="login-prompt-text">请登录后再查看</div>
-        </div>
-    `;
+    if (progressDetails) {
+        progressDetails.innerHTML = `
+            <div class="login-prompt">
+                <div class="login-prompt-text">请登录后再查看</div>
+            </div>
+        `;
+    }
 
     // 右侧面板内容替换为登录提示
     earnedPointsList.innerHTML = `
@@ -78,7 +81,7 @@ function hideContent() {
     `;
 
     // 禁用功能卡片
-    [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
+    featureCards.forEach(card => {
         card.classList.add('disabled');
         card.href = 'javascript:void(0)';
     });
@@ -149,15 +152,22 @@ recommendedCompetitionsList.innerHTML = `
 `;
 
     // 启用功能卡片
-    [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
+    featureCards.forEach(card => {
         card.classList.remove('disabled');
     });
 
-    // 设置正确的链接
-    policyCard.href = '学校保研政策.html';
-    rankingCard.href = '专业排名.html';
-    //planCard.href = '我的保研计划.html';
-   // competitionCard.href = '新增竞赛成绩.html';
+    if (policyCard) {
+        policyCard.href = '学校保研政策.html';
+    }
+    if (rankingCard) {
+        rankingCard.href = '专业排名（教师端）.html';
+    }
+    if (planCard) {
+        planCard.href = '审核中项目.html';
+    }
+    if (competitionCard) {
+        competitionCard.href = '审核记录.html';
+    }
 }
 
 // 登录按钮点击事件 - 跳转到登录页面
@@ -167,7 +177,7 @@ loginBtn.addEventListener('click', function() {
 
 // 功能卡片点击事件（未登录时）
 function addCardClickListeners() {
-    [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
+    featureCards.forEach(card => {
         card.addEventListener('click', function(e) {
             if (this.classList.contains('disabled')) {
                 e.preventDefault();

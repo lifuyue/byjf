@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加分审核 - 保研加分小助手管理员端</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style/common.css">
+    <link rel="stylesheet" href="style/admin-common.css">
+    <link rel="stylesheet" href="style/admin-audit.css">
+</head>
+<body>
+    <!-- 头部 -->
+    <div class="header-container">
+        <h1 class="page-title">
+            <i class="fas fa-check-double"></i>
+            加分申请审核
+        </h1>
+        <div class="user-section">
+            <a href="admin-index.html" class="back-to-home">
+                <i class="fas fa-home"></i>
+                返回主页
+            </a>
+        </div>
+    </div>
+
+    <div class="audit-main-wrapper">
+        <!-- 筛选和统计 -->
+        <div class="audit-filter-section">
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label>申请状态：</label>
+                    <select id="statusFilter">
+                        <option value="all">全部申请</option>
+                        <option value="pending" selected>待审核</option>
+                        <option value="approved">已通过</option>
+                        <option value="rejected">未通过</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>申请类型：</label>
+                    <select id="typeFilter">
+                        <option value="all">全部类型</option>
+                        <option value="competition">竞赛获奖</option>
+                        <option value="research">科研项目</option>
+                        <option value="paper">论文发表</option>
+                        <option value="patent">专利成果</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>申请时间：</label>
+                    <select id="timeFilter">
+                        <option value="all">全部时间</option>
+                        <option value="today">今天</option>
+                        <option value="week">本周</option>
+                        <option value="month">本月</option>
+                    </select>
+                </div>
+            </div>
+            <div class="audit-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalCount">156</span>
+                    <span class="stat-label">总申请数</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number pending" id="pendingCount">12</span>
+                    <span class="stat-label">待审核</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number approved" id="approvedCount">120</span>
+                    <span class="stat-label">已通过</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number rejected" id="rejectedCount">24</span>
+                    <span class="stat-label">未通过</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 申请列表 -->
+        <div class="audit-list-section">
+            <div class="section-header">
+                <h2>申请列表</h2>
+            </div>
+
+            <div class="applications-list" id="applicationsList">
+                <!-- 申请项将由JavaScript动态生成 -->
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination">
+                <button class="page-btn prev-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                    上一页
+                </button>
+                <div class="page-numbers">
+                    <span class="page-number active">1</span>
+                    <span class="page-number">2</span>
+                    <span class="page-number">3</span>
+                    <span class="page-dots">...</span>
+                    <span class="page-number">8</span>
+                </div>
+                <button class="page-btn next-btn">
+                    下一页
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审核详情模态框 -->
+    <div class="modal" id="auditModal">
+        <div class="modal-content audit-modal">
+            <div class="modal-header">
+                <h3>申请详情审核</h3>
+                <button class="close-modal" id="closeAuditModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="application-detail">
+                    <div class="detail-section">
+                        <h4>基本信息</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>申请人：</label>
+                                <span id="detailStudent">张三</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>学号：</label>
+                                <span id="detailStudentId">2021001001</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>学院：</label>
+                                <span id="detailCollege">计算机科学学院</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>专业：</label>
+                                <span id="detailMajor">计算机科学与技术</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>申请内容</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item full-width">
+                                <label>申请类型：</label>
+                                <span id="detailType">竞赛获奖</span>
+                            </div>
+                            <div class="detail-item full-width">
+                                <label>项目名称：</label>
+                                <span id="detailProject">全国大学生数学建模竞赛</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>获奖等级：</label>
+                                <span id="detailLevel">国家级一等奖</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>申请加分：</label>
+                                <span id="detailPoints">2.0分</span>
+                            </div>
+                            <div class="detail-item full-width">
+                                <label>证明材料：</label>
+                                <div class="proof-files">
+                                    <a href="#" class="proof-file">
+                                        <i class="fas fa-file-pdf"></i>
+                                        获奖证书.pdf
+                                    </a>
+                                    <a href="#" class="proof-file">
+                                        <i class="fas fa-file-image"></i>
+                                        比赛照片.jpg
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="detail-item full-width">
+                                <label>申请说明：</label>
+                                <div class="application-description" id="detailDescription">
+                                    参加了2023年全国大学生数学建模竞赛，获得国家级一等奖。团队成员包括我、李四、王五。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>审核意见</h4>
+                        <div class="audit-opinion">
+                            <textarea 
+                                id="auditReason" 
+                                placeholder="请输入审核意见（必填）..."
+                                rows="4"
+                            ></textarea>
+                            <div class="opinion-tips">
+                                <i class="fas fa-info-circle"></i>
+                                请详细说明通过或不通过的理由
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn reject-btn" id="rejectBtn">
+                    <i class="fas fa-times"></i>
+                    不通过
+                </button>
+                <button class="modal-btn approve-btn" id="approveBtn">
+                    <i class="fas fa-check"></i>
+                    通过
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审核确认模态框 -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-icon">
+                <i class="fas fa-check-circle" id="confirmIcon"></i>
+            </div>
+            <h3 class="modal-title" id="confirmTitle">确认通过申请</h3>
+            <p class="modal-text" id="confirmText">您确定要通过张三的数学建模竞赛申请吗？</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="cancelConfirm">取消</button>
+                <button class="modal-btn modal-btn-confirm" id="submitConfirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script/admin-audit.js"></script>
+</body>
+</html>

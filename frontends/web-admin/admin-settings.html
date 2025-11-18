@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系部保研政策设置 - 保研加分小助手管理员端</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style/admin-settings.css">
+</head>
+<body>
+    <!-- 头部 -->
+    <div class="header-container">
+        <h1 class="page-title">
+            <i class="fas fa-sliders-h"></i>
+            信息学院保研政策设置
+        </h1>
+        <div class="user-section">
+            <a href="admin-index.html" class="back-to-home">
+                <i class="fas fa-home"></i>
+                返回主页
+            </a>
+        </div>
+    </div>
+
+    <div class="settings-main-wrapper">
+        <!-- 系部政策设置 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-university"></i>
+                    各系保研政策设置
+                </h2>
+            </div>
+            <div class="policies-list" id="policiesList">
+                <!-- 系部政策列表将由JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="settings-actions">
+            <button class="action-btn save-btn" id="saveSettings">
+                <i class="fas fa-save"></i>
+                保存所有设置
+            </button>
+            <button class="action-btn reset-btn" id="resetSettings">
+                <i class="fas fa-undo"></i>
+                恢复默认
+            </button>
+        </div>
+    </div>
+
+    <!-- 编辑政策模态框 -->
+    <div class="modal" id="editPolicyModal">
+        <div class="modal-content policy-modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">编辑保研政策</h3>
+                <button class="close-modal" id="closePolicyModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="policy-form" id="policyForm">
+                    <div class="form-group">
+                        <label>系部名称：</label>
+                        <input type="text" id="policyCollege" readonly>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>保研政策内容：</label>
+                        <textarea id="policyContent" rows="8" placeholder="请输入该系的保研政策内容..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>最低GPA要求：</label>
+                        <input type="number" id="policyGPA" step="0.01" min="0" max="4" placeholder="例如：3.0">
+                    </div>
+                    <div class="form-group">
+                        <label>最低加分要求：</label>
+                        <input type="number" id="policyPoints" step="0.1" min="0" placeholder="例如：2.0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn" id="cancelPolicyBtn">
+                    取消
+                </button>
+                <button class="modal-btn confirm-btn" id="savePolicyBtn">
+                    <i class="fas fa-save"></i>
+                    保存政策
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存成功提示 -->
+    <div class="modal" id="successModal">
+        <div class="modal-content success-modal">
+            <div class="modal-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="modal-title">保存成功</h3>
+            <p class="modal-text" id="successText">政策已成功保存</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-confirm" id="confirmSuccess">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script/admin-settings.js"></script>
+</body>
+</html>

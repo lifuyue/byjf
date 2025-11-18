@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 保研加分小助手管理员端</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style/common.css">
+    <link rel="stylesheet" href="style/admin-common.css">
+    <link rel="stylesheet" href="style/admin-users.css">
+</head>
+<body>
+    <!-- 头部 -->
+    <div class="header-container">
+        <h1 class="page-title">
+            <i class="fas fa-user-cog"></i>
+            用户管理
+        </h1>
+        <div class="user-section">
+            <a href="admin-index.html" class="back-to-home">
+                <i class="fas fa-home"></i>
+                返回主页
+            </a>
+        </div>
+    </div>
+
+    <div class="users-main-wrapper">
+        <!-- 搜索和操作区域 -->
+        <div class="users-action-section">
+            <div class="search-controls">
+                <div class="search-group">
+                    <input type="text" id="searchInput" placeholder="搜索学生姓名、学号或学院...">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <label>学院：</label>
+                    <select id="collegeFilter">
+                        <option value="all">全部学院</option>
+                        <option value="computer">计算机科学学院</option>
+                        <option value="software">软件工程学院</option>
+                        <option value="electronic">电子信息学院</option>
+                        <option value="mechanical">机械工程学院</option>
+                        <option value="material">材料科学与工程学院</option>
+                        <option value="chemical">化学化工学院</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>年级：</label>
+                    <select id="gradeFilter">
+                        <option value="all">全部年级</option>
+                        <option value="2021">2021级</option>
+                        <option value="2022">2022级</option>
+                        <option value="2023">2023级</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户统计 -->
+        <div class="users-stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalStudents">156</div>
+                        <div class="stat-label">总学生数</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalPoints">324.5</div>
+                        <div class="stat-label">总加分</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="avgPoints">2.08</div>
+                        <div class="stat-label">平均加分</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="activeUsers">142</div>
+                        <div class="stat-label">活跃用户</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <div class="users-list-section">
+            <div class="section-header">
+                <h2>学生列表</h2>
+                <div class="list-info">
+                    共 <span id="studentsCount">156</span> 名学生
+                </div>
+            </div>
+
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>学号</th>
+                            <th>姓名</th>
+                            <th>学院</th>
+                            <th>专业</th>
+                            <th>年级</th>
+                            <th>总加分</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- 用户数据将由JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination">
+                <button class="page-btn prev-btn" id="prevBtn">
+                    <i class="fas fa-chevron-left"></i>
+                    上一页
+                </button>
+                <div class="page-numbers" id="pageNumbers">
+                    <!-- 页码将由JavaScript动态生成 -->
+                </div>
+                <button class="page-btn next-btn" id="nextBtn">
+                    下一页
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 学生详情模态框 -->
+    <div class="modal" id="studentModal">
+        <div class="modal-content student-modal">
+            <div class="modal-header">
+                <h3>学生详细信息</h3>
+                <button class="close-modal" id="closeStudentModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="student-detail">
+                    <div class="detail-section">
+                        <h4>基本信息</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>学号：</label>
+                                <span id="detailStudentId">2021001001</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>姓名：</label>
+                                <span id="detailName">张三</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>学院：</label>
+                                <span id="detailCollege">计算机科学学院</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>专业：</label>
+                                <span id="detailMajor">计算机科学与技术</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>年级：</label>
+                                <span id="detailGrade">2021级</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>班级：</label>
+                                <span id="detailClass">计算机2101班</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>联系电话：</label>
+                                <span id="detailPhone">138****1234</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>邮箱：</label>
+                                <span id="detailEmail">zhangsan@edu.cn</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="section-header">
+                            <h4>加分项记录</h4>
+                            <button class="action-btn add-points-btn" id="addPointsBtn">
+                                <i class="fas fa-plus"></i>
+                                添加加分项
+                            </button>
+                        </div>
+                        <div class="points-list" id="pointsList">
+                            <!-- 加分项列表 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn reset-pwd-btn" id="resetPwdBtn">
+                    <i class="fas fa-key"></i>
+                    重置密码
+                </button>
+                <button class="modal-btn close-btn" id="closeDetailBtn">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加加分项模态框 -->
+    <div class="modal" id="addPointsModal">
+        <div class="modal-content points-modal">
+            <div class="modal-header">
+                <h3>添加加分项</h3>
+                <button class="close-modal" id="closePointsModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="points-form" id="pointsForm">
+                    <div class="form-group">
+                        <label>加分类型：</label>
+                        <select id="pointsType" required>
+                            <option value="">请选择类型</option>
+                            <option value="competition">竞赛获奖</option>
+                            <option value="research">科研项目</option>
+                            <option value="paper">论文发表</option>
+                            <option value="patent">专利成果</option>
+                            <option value="volunteer">志愿服务</option>
+                            <option value="internship">实习实践</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>项目名称：</label>
+                        <input type="text" id="pointsProject" placeholder="请输入项目名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label>获奖等级/级别：</label>
+                        <input type="text" id="pointsLevel" placeholder="例如：国家级一等奖" required>
+                    </div>
+                    <div class="form-group">
+                        <label>加分分值：</label>
+                        <input type="number" id="pointsValue" step="0.1" min="0.1" max="10" placeholder="请输入加分分值" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>详细说明：</label>
+                        <textarea id="pointsDescription" placeholder="请输入加分项的详细说明..." rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel-btn" id="cancelPointsBtn">
+                    取消
+                </button>
+                <button class="modal-btn confirm-btn" id="submitPointsBtn">
+                    <i class="fas fa-check"></i>
+                    确认添加
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重置密码确认模态框 -->
+    <div class="modal" id="resetPwdModal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h3 class="modal-title">确认重置密码</h3>
+            <p class="modal-text" id="resetPwdText">您确定要重置张三的密码吗？重置后密码将恢复为默认密码。</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="cancelResetPwd">取消</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmResetPwd">确认重置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除加分项确认模态框 -->
+    <div class="modal" id="deletePointsModal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-icon">
+                <i class="fas fa-trash"></i>
+            </div>
+            <h3 class="modal-title">确认删除加分项</h3>
+            <p class="modal-text" id="deletePointsText">您确定要删除这个加分项吗？此操作不可恢复。</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="cancelDeletePoints">取消</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmDeletePoints">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script/admin-users.js"></script>
+</body>
+</html>

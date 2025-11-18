@@ -1,13 +1,273 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/gsapp/admin/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PG-Plus Admin Console</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保研加分小助手管理员端</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style/common.css">
+    <link rel="stylesheet" href="style/admin-common.css">
+    <link rel="stylesheet" href="style/admin-index.css">
+</head>
+<body>
+    <!-- 头部 -->
+<div class="header-container">
+    <h1 class="page-title">
+        <i class="fas fa-check-double"></i>
+        保研加分小助手管理员端
+    </h1>
+    <div class="user-section">
+        <div class="admin-notification">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="pendingCount">12</span>
+        </div>
+        <div class="user-info" id="userInfo">
+            <div class="user-avatar admin-avatar">管</div>
+            <div class="user-details">
+                <span class="user-nickname" id="userNickname">管理员</span>
+                <span class="user-account" id="userAccount">admin@system.edu.cn</span>
+            </div>
+        </div>
+        <a href="#" class="logout-btn" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i>
+            退出登录
+        </a>
+    </div>
+</div>
+    
+    <div class="admin-main-wrapper">
+        <!-- 数据概览卡片 -->
+        <div class="admin-stats-container">
+            <div class="admin-stats-grid">
+                <!-- 待审核申请 -->
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="pendingApplications">12</div>
+                        <div class="stat-label">待审核申请</div>
+                    </div>
+                    <div class="stat-action">
+                        <a href="admin-audit.html" class="stat-link">立即处理</a>
+                    </div>
+                </div>
+                
+                <!-- 系统用户 -->
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalUsers">156</div>
+                        <div class="stat-label">系统用户</div>
+                    </div>
+                </div>
+                
+                <!-- 今日新增 -->
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="todayApplications">8</div>
+                        <div class="stat-label">今日新增申请</div>
+                    </div>
+                </div>
+                
+                <!-- 通过率 -->
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="approvalRate">78%</div>
+                        <div class="stat-label">平均通过率</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 主要内容区域 -->
+        <div class="admin-main-container">
+            <div class="admin-left-panel">
+                <!-- 快捷操作面板 -->
+                <div class="admin-quick-panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-rocket"></i>
+                        快捷操作
+                    </h2>
+                    <div class="quick-actions-grid">
+                        <!-- 用户管理 -->
+                        <a href="admin-users.html" class="quick-action-card">
+                            <div class="action-icon">
+                                <i class="fas fa-user-cog"></i>
+                            </div>
+                            <div class="action-content">
+                                <h3>用户管理</h3>
+                                <p>管理学生信息、批量导入、密码重置</p>
+                            </div>
+                        </a>
+                        
+                        <!-- 加分审核 -->
+                        <a href="admin-audit.html" class="quick-action-card urgent">
+                            <div class="action-icon">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <div class="action-content">
+                                <h3>加分审核 <span class="badge">12</span></h3>
+                                <p>审核申请</p>
+                            </div>
+                        </a>
+                        
+                        <!-- 数据统计 -->
+                        <a href="admin-statistics.html" class="quick-action-card">
+                            <div class="action-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="action-content">
+                                <h3>专业排名</h3>
+                                <p>专业排名一览</p>
+                            </div>
+                        </a>
+                        
+                        <!-- 系统设置 -->
+                        <a href="admin-settings.html" class="quick-action-card">
+                            <div class="action-icon">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <div class="action-content">
+                                <h3>保研政策</h3>
+                                <p>各学院保研政策公示</p>
+                            </div>
+                        </a>
+                        
+                        <!-- 报表导出 -->
+                        <a href="admin-reports.html" class="quick-action-card">
+                            <div class="action-icon">
+                                <i class="fas fa-file-export"></i>
+                            </div>
+                            <div class="action-content">
+                                <h3>报表导出</h3>
+                                <p>加分明细、候选名单、统计报表</p>
+                            </div>
+                        </a>
+                        
+                        <!-- 系统日志 -->
+                        <a href="admin-logs.html" class="quick-action-card">
+                            <div class="action-icon">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <div class="action-content">
+                                <h3>系统日志</h3>
+                                <p>操作记录、登录日志、系统监控</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="admin-right-panel">
+                <!-- 实时动态 -->
+                <div class="admin-realtime-panel">
+                    <!-- 最新申请 -->
+                    <div class="realtime-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-bolt"></i>
+                                最新申请记录
+                            </h3>
+                            <a href="admin-audit.html" class="view-more-link">
+                                查看全部 
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="realtime-list" id="recentApplications">
+                            <div class="realtime-item">
+                                <div class="item-avatar">张</div>
+                                <div class="item-content">
+                                    <div class="item-title">张三 - 数学建模竞赛</div>
+                                    <div class="item-meta">计算机科学学院 | 刚刚提交</div>
+                                </div>
+                                <div class="item-status pending">待审核</div>
+                            </div>
+                            <div class="realtime-item">
+                                <div class="item-avatar">李</div>
+                                <div class="item-content">
+                                    <div class="item-title">李四 - 英语竞赛</div>
+                                    <div class="item-meta">外国语学院 | 5分钟前</div>
+                                </div>
+                                <div class="item-status pending">待审核</div>
+                            </div>
+                            <div class="realtime-item">
+                                <div class="item-avatar">王</div>
+                                <div class="item-content">
+                                    <div class="item-title">王五 - 程序设计大赛</div>
+                                    <div class="item-meta">软件工程学院 | 10分钟前</div>
+                                </div>
+                                <div class="item-status pending">待审核</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 系统日志 -->
+                    <div class="realtime-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-history"></i>
+                                系统操作日志
+                            </h3>
+                            <a href="admin-logs.html" class="view-more-link">
+                                查看全部 
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div class="realtime-list" id="systemLogs">
+                            <div class="realtime-item">
+                                <div class="item-icon"><i class="fas fa-user-check"></i></div>
+                                <div class="item-content">
+                                    <div class="item-title">管理员审核了张三的申请</div>
+                                    <div class="item-meta">数学建模竞赛 | 15分钟前</div>
+                                </div>
+                            </div>
+                            <div class="realtime-item">
+                                <div class="item-icon"><i class="fas fa-user-plus"></i></div>
+                                <div class="item-content">
+                                    <div class="item-title">新增学生用户：赵六</div>
+                                    <div class="item-meta">电子信息学院 | 30分钟前</div>
+                                </div>
+                            </div>
+                            <div class="realtime-item">
+                                <div class="item-icon"><i class="fas fa-cog"></i></div>
+                                <div class="item-content">
+                                    <div class="item-title">系统设置已更新</div>
+                                    <div class="item-meta">竞赛加分标准 | 1小时前</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退出确认弹窗 -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="modal-title">确认退出登录</h3>
+            <p class="modal-text">您确定要退出管理员账号吗？退出后需要重新登录才能访问系统功能。</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="cancelLogout">取消</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmLogout">确认退出</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script/common.js"></script>
+    <script src="script/admin-common.js"></script>
+    <script src="script/admin-index.js"></script>
+</body>
 </html>
