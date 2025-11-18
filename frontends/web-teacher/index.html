@@ -154,6 +154,76 @@
 
           <div class="project-list" id="teacherProjectsList"></div>
         </div>
+
+        <div class="volunteer-certification" id="volunteerCertificationSection">
+          <div class="section-title-row">
+            <h2 class="section-title">志愿工时认证</h2>
+            <button class="volunteer-refresh-btn" id="refreshVolunteerBtn">
+              <i class="fas fa-rotate-right"></i>
+              刷新认证数据
+            </button>
+          </div>
+
+          <form class="volunteer-form" id="volunteerForm">
+            <div class="form-grid">
+              <label class="form-field">
+                <span>学生姓名</span>
+                <input type="text" id="volunteerStudentName" name="volunteerStudentName" placeholder="例如：李华" required />
+              </label>
+              <label class="form-field">
+                <span>学生账号/邮箱</span>
+                <input type="email" id="volunteerStudentAccount" name="volunteerStudentAccount" placeholder="student@example.com" required />
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="form-field">
+                <span>志愿活动</span>
+                <input type="text" id="volunteerActivity" name="volunteerActivity" placeholder="例如：社区图书整理" required />
+              </label>
+              <label class="form-field">
+                <span>工时数</span>
+                <input type="number" id="volunteerHours" name="volunteerHours" min="1" max="200" placeholder="例如：4" required />
+              </label>
+            </div>
+
+            <label class="form-field">
+              <span>证明材料链接/备注</span>
+              <input type="text" id="volunteerProof" name="volunteerProof" placeholder="例如：凭证编号或存储链接" />
+            </label>
+
+            <label class="form-field inline">
+              <input type="checkbox" id="volunteerRequireOcr" name="volunteerRequireOcr" />
+              <span>勾选表示后续计划使用 OCR 自动识别（当前仍需人工审核）</span>
+            </label>
+
+            <label class="form-field">
+              <span>审核备注</span>
+              <textarea id="volunteerNotes" name="volunteerNotes" rows="2" placeholder="选填：备注或说明"></textarea>
+            </label>
+
+            <button type="submit" class="project-submit-btn">
+              <i class="fas fa-plus"></i>
+              记录工时
+            </button>
+            <div class="form-hint" id="volunteerFormHint"></div>
+          </form>
+
+          <div class="volunteer-lists">
+            <div class="volunteer-card-group">
+              <div class="volunteer-group-title">
+                <h3>待审核</h3>
+              </div>
+              <div class="volunteer-list" id="volunteerPendingList"></div>
+            </div>
+            <div class="volunteer-card-group">
+              <div class="volunteer-group-title">
+                <h3>历史记录</h3>
+              </div>
+              <div class="volunteer-list" id="volunteerHistoryList"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -36,6 +36,7 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 - Celery、Redis、Nginx、Gunicorn/Daphne 的配置示例已经就绪（需按需开启）。
 - 所有前端位于 `frontends/`，通过 pnpm workspace 统一安装依赖、运行 dev server、执行 lint/typecheck/build。
 - `frontends/web-student`、`frontends/web-teacher` 暂以静态仪表板+脚本提供真实 UI；`frontends/web-admin` 复用了用户提供的备份模板。
+- 教师端/学生端新增“教师项目 + 志愿工时认证”示例模块，使用共享 Cookie/LocalStorage 同步数据，并预留“启用 OCR”开关方便后续扩展。
 
 ## 环境要求
 

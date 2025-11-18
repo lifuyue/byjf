@@ -580,6 +580,189 @@ body {
     background: #fbfdff;
 }
 
+.volunteer-certification {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e3e9f3;
+    padding: 22px;
+    box-shadow: 0 12px 30px rgba(67, 89, 113, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.volunteer-certification.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.volunteer-refresh-btn {
+    border: none;
+    background: #f1f4fb;
+    color: #2c3e50;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.volunteer-refresh-btn:hover {
+    background: #e1e7f5;
+}
+
+.volunteer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border: 1px solid #e5e9f2;
+    border-radius: 12px;
+    padding: 18px;
+    background: #fefefe;
+}
+
+.form-field.inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.volunteer-lists {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.volunteer-card-group {
+    background: #f9fbff;
+    border-radius: 12px;
+    border: 1px solid #e0e7f3;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.volunteer-group-title h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.volunteer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.volunteer-card {
+    border-radius: 12px;
+    border: 1px solid #dfe7f6;
+    background: #fff;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+}
+
+.volunteer-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.volunteer-card .student-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.volunteer-card .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e0f2ff;
+    color: #1d4ed8;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.volunteer-card .status-pill.approved {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.volunteer-card .status-pill.rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.volunteer-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.volunteer-meta span i {
+    margin-right: 6px;
+}
+
+.volunteer-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.volunteer-action-btn {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.volunteer-action-btn.approve {
+    background: #22c55e;
+    color: #fff;
+}
+
+.volunteer-action-btn.reject {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.ocr-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff7ed;
+    color: #c2410c;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.volunteer-empty {
+    border: 1px dashed #d4dcec;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: #7a869c;
+    background: #fff;
+}
+
 /* 未登录状态样式 */
 .login-prompt {
     display: flex;

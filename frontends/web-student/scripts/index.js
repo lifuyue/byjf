@@ -25,6 +25,11 @@ const competitionCard = document.getElementById('competitionCard');
 const teacherProjectsSection = document.getElementById('teacherProjectsSection');
 const teacherProjectsList = document.getElementById('teacherProjectsList');
 const refreshTeacherProjectsBtn = document.getElementById('refreshTeacherProjectsBtn');
+const studentVolunteerSection = document.getElementById('studentVolunteerSection');
+const studentVolunteerList = document.getElementById('studentVolunteerList');
+const studentVolunteerForm = document.getElementById('studentVolunteerForm');
+const studentVolunteerFormHint = document.getElementById('studentVolunteerFormHint');
+const refreshStudentVolunteerBtn = document.getElementById('refreshStudentVolunteerBtn');
 
 // 用户进度数据
 let userPointsData = {
@@ -37,6 +42,9 @@ const PROJECT_COOKIE_KEY = 'pg_plus_projects';
 const STUDENT_PROJECT_CACHE_KEY = 'studentTeacherProjectsCache';
 const STUDENT_SELECTION_KEY = 'studentProjectSelections';
 const PROJECT_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
+const VOLUNTEER_COOKIE_KEY = 'pg_plus_volunteer_records';
+const STUDENT_VOLUNTEER_CACHE_KEY = 'studentVolunteerRecordsCache';
+const VOLUNTEER_COOKIE_MAX_AGE = 7 * 24 * 60 * 60;
 const DEFAULT_TEACHER_PROJECTS = [
     {
         id: 'proj-research-2024',
@@ -64,10 +72,43 @@ const DEFAULT_TEACHER_PROJECTS = [
     }
 ];
 
+const DEFAULT_VOLUNTEER_RECORDS = [
+    {
+        id: 'vol-2024-001',
+        studentName: '李华',
+        studentAccount: 'lihua@example.com',
+        activity: '社区图书整理',
+        hours: 6,
+        proof: '凭证 #A2024',
+        requireOcr: false,
+        status: 'approved',
+        reviewNotes: '资料齐全，已计入学时',
+        submittedVia: 'teacher',
+        createdAt: '2024-04-15T09:00:00.000Z',
+        updatedAt: '2024-04-18T09:00:00.000Z'
+    },
+    {
+        id: 'vol-2024-002',
+        studentName: '王敏',
+        studentAccount: 'wangmin@example.com',
+        activity: '敬老院陪伴',
+        hours: 4,
+        proof: '扫描件待识别',
+        requireOcr: true,
+        status: 'pending',
+        reviewNotes: '',
+        submittedVia: 'student',
+        createdAt: '2024-04-20T12:00:00.000Z',
+        updatedAt: '2024-04-20T12:00:00.000Z'
+    }
+];
+
 let teacherProjects = [];
 let teacherProjectsSignature = '';
 let studentProjectSelections = new Set();
 let teacherProjectsWatcher = null;
+let volunteerRecords = [];
+let volunteerRecordsSignature = '';
 
 // ------------------- 公共函数 -------------------
 function calculatePercentage(earned, total) {
@@ -196,6 +237,236 @@ function persistTeacherProjects(projects) {
     teacherProjectsSignature = JSON.stringify(teacherProjects);
     updateTeacherProjectsCache(teacherProjects);
     writeTeacherProjectsCookie(teacherProjects);
+}
+
+// ------------------- 志愿工时存储 -------------------
+function sanitizeVolunteerRecord(record = {}) {
+    const normalized = { ...record };
+    normalized.id = typeof normalized.id === 'string' ? normalized.id : `vol-${Date.now()}`;
+    normalized.studentName = (normalized.studentName || '未知学生').trim();
+    normalized.studentAccount = (normalized.studentAccount || '').trim();
+    normalized.activity = (normalized.activity || '未命名活动').trim();
+    normalized.hours = Number.isFinite(Number(normalized.hours)) ? Math.max(0, Number(normalized.hours)) : 0;
+    normalized.proof = (normalized.proof || '').trim();
+    normalized.requireOcr = Boolean(normalized.requireOcr);
+    const allowed = ['pending', 'approved', 'rejected'];
+    normalized.status = allowed.includes(normalized.status) ? normalized.status : 'pending';
+    normalized.reviewNotes = (normalized.reviewNotes || '').trim();
+    normalized.submittedVia = normalized.submittedVia === 'teacher' ? 'teacher' : 'student';
+    normalized.createdAt = normalized.createdAt || new Date().toISOString();
+    normalized.updatedAt = normalized.updatedAt || normalized.createdAt;
+    return normalized;
+}
+
+function readVolunteerRecordsFromCookie() {
+    try {
+        const cookieValue = getCookieValue(VOLUNTEER_COOKIE_KEY);
+        if (!cookieValue) return [];
+        const parsed = JSON.parse(cookieValue);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeVolunteerRecordsCookie(records) {
+    try {
+        const payload = encodeURIComponent(JSON.stringify(records));
+        document.cookie = `${VOLUNTEER_COOKIE_KEY}=${payload}; path=/; max-age=${VOLUNTEER_COOKIE_MAX_AGE}`;
+    } catch (error) {
+        console.warn('写入志愿记录 Cookie 失败', error);
+    }
+}
+
+function readVolunteerRecordsCache() {
+    try {
+        const cache = JSON.parse(localStorage.getItem(STUDENT_VOLUNTEER_CACHE_KEY) || '[]');
+        return Array.isArray(cache) ? cache : [];
+    } catch {
+        return [];
+    }
+}
+
+function updateVolunteerRecordsCache(records) {
+    localStorage.setItem(STUDENT_VOLUNTEER_CACHE_KEY, JSON.stringify(records));
+}
+
+function initializeVolunteerRecordsData() {
+    const cookieRecords = readVolunteerRecordsFromCookie();
+    if (cookieRecords.length) {
+        volunteerRecords = cookieRecords.map(sanitizeVolunteerRecord);
+        volunteerRecordsSignature = JSON.stringify(volunteerRecords);
+        updateVolunteerRecordsCache(volunteerRecords);
+        return;
+    }
+
+    const cached = readVolunteerRecordsCache();
+    if (cached.length) {
+        volunteerRecords = cached.map(sanitizeVolunteerRecord);
+        volunteerRecordsSignature = JSON.stringify(volunteerRecords);
+        writeVolunteerRecordsCookie(volunteerRecords);
+        return;
+    }
+
+    volunteerRecords = DEFAULT_VOLUNTEER_RECORDS.map(record => ({ ...record }));
+    volunteerRecordsSignature = JSON.stringify(volunteerRecords);
+    updateVolunteerRecordsCache(volunteerRecords);
+    writeVolunteerRecordsCookie(volunteerRecords);
+}
+
+function persistVolunteerRecords(records) {
+    volunteerRecords = records.map(sanitizeVolunteerRecord);
+    volunteerRecordsSignature = JSON.stringify(volunteerRecords);
+    updateVolunteerRecordsCache(volunteerRecords);
+    writeVolunteerRecordsCookie(volunteerRecords);
+}
+
+function syncVolunteerRecordsFromCookie(options = {}) {
+    const cookieRecords = readVolunteerRecordsFromCookie();
+    if (!cookieRecords.length) {
+        return;
+    }
+    const normalized = cookieRecords.map(sanitizeVolunteerRecord);
+    const nextSignature = JSON.stringify(normalized);
+    if (nextSignature === volunteerRecordsSignature) {
+        return;
+    }
+    volunteerRecords = normalized;
+    volunteerRecordsSignature = nextSignature;
+    updateVolunteerRecordsCache(volunteerRecords);
+    if (!options.skipRender && studentVolunteerSection && !studentVolunteerSection.classList.contains('disabled')) {
+        renderStudentVolunteerRecords();
+    }
+}
+
+function getCurrentStudentProfile() {
+    try {
+        return JSON.parse(localStorage.getItem('userData') || '{}');
+    } catch {
+        return {};
+    }
+}
+
+function renderStudentVolunteerRecords() {
+    if (!studentVolunteerList) {
+        return;
+    }
+    const profile = getCurrentStudentProfile();
+    const account = profile.username || '';
+    if (!account) {
+        studentVolunteerList.innerHTML = `<div class="volunteer-card">登录后可查看志愿工时记录</div>`;
+        return;
+    }
+
+    const records = volunteerRecords.filter(record => record.studentAccount === account);
+    if (!records.length) {
+        studentVolunteerList.innerHTML = `<div class="volunteer-card">暂时没有您的志愿工时记录，欢迎提交认证。</div>`;
+        return;
+    }
+
+    studentVolunteerList.innerHTML = records.map(createStudentVolunteerCard).join('');
+}
+
+function createStudentVolunteerCard(record) {
+    const statusClass = record.status === 'approved' ? 'approved' : record.status === 'rejected' ? 'rejected' : '';
+    const statusText =
+        record.status === 'approved' ? '已通过' : record.status === 'rejected' ? '已驳回' : '审核中';
+    return `
+        <div class="volunteer-card">
+            <div class="card-header">
+                <div>
+                    <div class="meta">
+                        <span><i class="fas fa-book"></i>${record.activity}</span>
+                        <span><i class="fas fa-clock"></i>${record.hours} 小时</span>
+                        ${record.proof ? `<span><i class="fas fa-paperclip"></i>${record.proof}</span>` : ''}
+                    </div>
+                </div>
+                <span class="status-pill ${statusClass}">
+                    ${statusText}
+                </span>
+            </div>
+            ${record.requireOcr ? `<div class="ocr-flag"><i class="fas fa-robot"></i>等待 OCR 辅助识别</div>` : ''}
+            ${record.reviewNotes ? `<div class="meta"><span><i class="fas fa-comment"></i>${record.reviewNotes}</span></div>` : ''}
+            <div class="hours-badge">提交来源：${record.submittedVia === 'teacher' ? '教师录入' : '学生提交'}</div>
+        </div>
+    `;
+}
+
+function setVolunteerSectionLoggedIn(isLoggedIn) {
+    if (!studentVolunteerSection) {
+        return;
+    }
+    studentVolunteerSection.classList.toggle('disabled', !isLoggedIn);
+    if (!isLoggedIn) {
+        if (studentVolunteerList) {
+            studentVolunteerList.innerHTML = `<div class="volunteer-card">登录后可提交志愿工时</div>`;
+        }
+        showStudentVolunteerFormHint('请先登录再提交认证');
+    } else {
+        showStudentVolunteerFormHint('');
+        renderStudentVolunteerRecords();
+    }
+}
+
+function showStudentVolunteerFormHint(message = '', type = 'info') {
+    if (!studentVolunteerFormHint) {
+        return;
+    }
+    studentVolunteerFormHint.textContent = message;
+    studentVolunteerFormHint.classList.remove('success', 'error');
+    if (type === 'success') {
+        studentVolunteerFormHint.classList.add('success');
+    } else if (type === 'error') {
+        studentVolunteerFormHint.classList.add('error');
+    }
+}
+
+function handleStudentVolunteerSubmit(event) {
+    event.preventDefault();
+    const profile = getCurrentStudentProfile();
+    const account = profile.username || '';
+    if (!account) {
+        showStudentVolunteerFormHint('请登录后再提交志愿工时', 'error');
+        return;
+    }
+
+    const formData = new FormData(studentVolunteerForm);
+    const activity = (formData.get('studentVolunteerActivity') || '').trim();
+    const hours = Number(formData.get('studentVolunteerHours'));
+    const proof = (formData.get('studentVolunteerProof') || '').trim();
+    const notes = (formData.get('studentVolunteerNotes') || '').trim();
+    const requireOcr = Boolean(formData.get('studentVolunteerRequireOcr'));
+
+    if (!activity || !hours) {
+        showStudentVolunteerFormHint('请填写活动名称和工时数', 'error');
+        return;
+    }
+
+    const newRecord = {
+        id: `vol-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        studentName: profile.nickname || profile.username || '学生',
+        studentAccount: account,
+        activity,
+        hours,
+        proof,
+        requireOcr,
+        status: 'pending',
+        reviewNotes: notes || (requireOcr ? '请求 OCR 识别后再审核' : '等待教师审核'),
+        submittedVia: 'student',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    volunteerRecords.unshift(newRecord);
+    persistVolunteerRecords(volunteerRecords);
+    renderStudentVolunteerRecords();
+    studentVolunteerForm.reset();
+    showStudentVolunteerFormHint('已提交，老师审核后将同步状态', 'success');
+}
+
+function refreshStudentVolunteerRecords() {
+    syncVolunteerRecordsFromCookie();
+    showStudentVolunteerFormHint('已同步最新状态');
 }
 
 function renderTeacherProjectsForStudent() {
@@ -339,11 +610,15 @@ function syncTeacherProjectsFromCookie(options = {}) {
 
 function startTeacherProjectsWatcher() {
     if (teacherProjectsWatcher) return;
-    teacherProjectsWatcher = setInterval(() => syncTeacherProjectsFromCookie(), 5000);
-    window.addEventListener('focus', () => syncTeacherProjectsFromCookie());
+    const syncAll = () => {
+        syncTeacherProjectsFromCookie();
+        syncVolunteerRecordsFromCookie();
+    };
+    teacherProjectsWatcher = setInterval(syncAll, 5000);
+    window.addEventListener('focus', () => syncAll());
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-            syncTeacherProjectsFromCookie();
+            syncAll();
         }
     });
 }
@@ -414,6 +689,7 @@ function hideContent() {
     });
 
     setTeacherProjectsSectionLoggedIn(false);
+    setVolunteerSectionLoggedIn(false);
 }
 
 function showContent() {
@@ -517,6 +793,7 @@ function showContent() {
     competitionCard.href = '新增竞赛成绩.html';
 
     setTeacherProjectsSectionLoggedIn(true);
+    setVolunteerSectionLoggedIn(true);
 }
 
 // ------------------- 事件绑定 -------------------
@@ -575,16 +852,24 @@ window.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     studentProjectSelections = loadStudentSelections();
     initializeTeacherProjectsData();
+    initializeVolunteerRecordsData();
     checkLoginStatus();
     addCardClickListeners();
     startTeacherProjectsWatcher();
     syncTeacherProjectsFromCookie({ skipRender: true });
+    syncVolunteerRecordsFromCookie({ skipRender: true });
 
     if (teacherProjectsList) {
         teacherProjectsList.addEventListener('click', handleTeacherProjectClick);
     }
     if (refreshTeacherProjectsBtn) {
         refreshTeacherProjectsBtn.addEventListener('click', refreshTeacherProjects);
+    }
+    if (studentVolunteerForm) {
+        studentVolunteerForm.addEventListener('submit', handleStudentVolunteerSubmit);
+    }
+    if (refreshStudentVolunteerBtn) {
+        refreshStudentVolunteerBtn.addEventListener('click', refreshStudentVolunteerRecords);
     }
 
     document.querySelectorAll('.action-card').forEach(card => {

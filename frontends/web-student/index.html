@@ -131,6 +131,46 @@
                 </div>
                 <div class="items-list teacher-projects-list" id="teacherProjectsList"></div>
             </div>
+
+            <div class="volunteer-section" id="studentVolunteerSection">
+                <div class="section-header volunteer-header">
+                    <h2 class="section-title">志愿工时认证</h2>
+                    <button class="refresh-volunteer-btn" id="refreshStudentVolunteerBtn">
+                        <i class="fas fa-rotate-right"></i>
+                        刷新
+                    </button>
+                </div>
+                <div class="volunteer-layout">
+                    <div class="volunteer-list" id="studentVolunteerList"></div>
+                    <form class="volunteer-form" id="studentVolunteerForm">
+                        <div class="form-field">
+                            <span>志愿活动</span>
+                            <input type="text" id="studentVolunteerActivity" name="studentVolunteerActivity" placeholder="例如：社区服务" required />
+                        </div>
+                        <div class="form-field">
+                            <span>工时数</span>
+                            <input type="number" id="studentVolunteerHours" name="studentVolunteerHours" min="1" max="200" placeholder="如 4" required />
+                        </div>
+                        <div class="form-field">
+                            <span>证明材料说明或链接</span>
+                            <input type="text" id="studentVolunteerProof" name="studentVolunteerProof" placeholder="上传凭证后可填写链接或编号" />
+                        </div>
+                        <label class="form-field inline">
+                            <input type="checkbox" id="studentVolunteerRequireOcr" name="studentVolunteerRequireOcr" />
+                            <span>我希望使用 OCR 自动识别（当前仍需要教师人工确认）</span>
+                        </label>
+                        <div class="form-field">
+                            <span>备注</span>
+                            <textarea id="studentVolunteerNotes" name="studentVolunteerNotes" rows="2" placeholder="可选：补充说明"></textarea>
+                        </div>
+                        <button type="submit" class="project-select-btn primary">
+                            <i class="fas fa-paper-plane"></i>
+                            提交认证
+                        </button>
+                        <div class="form-hint" id="studentVolunteerFormHint"></div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
