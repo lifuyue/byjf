@@ -8,9 +8,9 @@
 ## Build, Test, and Development Commands
 - `.python-version` pins 3.11 so uv/pyenv/IDEs can auto-resolve `.venv/bin/python3.11`.
 - `make setup` still runs `uv sync --all-groups`, then boots into `frontends/` to execute `pnpm install` for every SPA.
-- Windows contributors can skip GNU Make entirely: run `python -m pip install --upgrade uv`, `uv sync --all-groups`, then `cd frontends && pnpm install && pnpm dev` to spin up all dev servers. Backend commands use `uv run python backend/manage.py ...` directly.
+- Windows contributors can skip GNU Make entirely: run `python -m pip install --upgrade uv`, `uv sync --all-groups`, then `cd frontends && pnpm install && pnpm dev` to spin up all dev servers. Backend commands use `uv run python backend/manage.py ...` directly。
 - `make backend-serve` remains a shortcut for `uv run python backend/manage.py migrate && uv run python backend/manage.py runserver 0.0.0.0:8000`.
-- In `frontends/`, `pnpm dev` runs all apps concurrently (student/admin/teacher on 5173/5174/5175). Use `pnpm dev:student` / `pnpm dev:teacher` / `pnpm dev:admin` for focused work, and `pnpm build`/`pnpm lint`/`pnpm typecheck` to orchestrate workspace tasks.
+- In `frontends/`, `pnpm dev` runs all apps concurrently (student/admin/teacher on 5173/5174/5175). Use `pnpm dev:student` / `pnpm dev:teacher` / `pnpm dev:admin` for focused work, and `pnpm build`/`pnpm lint`/`pnpm typecheck` to orchestrate workspace tasks. 学生端已支持在线编辑/删除志愿工时记录，并与教师端三审流程同步。
 - Celery workers continue to use `make celery` / `make celery-beat` (or `uv run celery -A backend.core worker|beat`) once Redis is available.
 
 ## Coding Style & Naming Conventions
