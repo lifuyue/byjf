@@ -9,10 +9,10 @@
 ## Build, Test, and Development Commands
 - `.python-version` pins 3.11 so uv/pyenv/IDEs can auto-resolve `.venv/bin/python3.11`.
 - `make setup` still runs `uv sync --all-groups`, then boots into `frontends/` to execute `pnpm install` for every SPA.
-- Windows contributors can skip GNU Make entirely: run `python -m pip install --upgrade uv`, `uv sync --all-groups`, then `cd frontends && pnpm install && pnpm dev` to spin up all dev servers. Backend commands use `uv run python backend/manage.py ...` directly。
+- Windows contributors can skip GNU Make entirely: run `python -m pip install --upgrade uv`, `uv sync --all-groups`, then `cd frontends && pnpm install && pnpm --filter pg-plus-web-student dev` 启动统一前端。Backend commands use `uv run python backend/manage.py ...` directly。
 - `make backend-serve` remains a shortcut for `uv run python backend/manage.py migrate && uv run python backend/manage.py runserver 0.0.0.0:8000`.
 - Use `uv run python backend/manage.py seed_demo_data --force` whenever you need the teacher projects, selections, volunteer records **and demo accounts (`student001`/`teacher001`/`admin001` with `Passw0rd!`)** pre-populated for local demos.
-- In `frontends/`, `pnpm dev` runs all apps concurrently (student/admin/teacher on 5173/5174/5175). Use `pnpm dev:student` / `pnpm dev:teacher` / `pnpm dev:admin` for focused work, and `pnpm build` / `pnpm lint` / `pnpm typecheck` to orchestrate workspace tasks. The student/teacher dashboards now call `/api/v1/programs/...` directly; update the `<meta name="pg-plus-api-base" ...>` tag inside each `index.html` if the backend base URL changes.
+- In `frontends/`, `pnpm --filter pg-plus-web-student dev` 启动唯一 dev server（端口 5173，托管 `/gsapp/`、`/gsapp/teacher/`、`/gsapp/admin/` 三个入口）。`pnpm --filter pg-plus-web-teacher dev` / `pnpm --filter pg-plus-web-admin dev` 仅在需要独立调试各包时使用。`pnpm build` / `pnpm lint` / `pnpm typecheck` 仍 orchestrate workspace tasks。Student/teacher dashboards call `/api/v1/programs/...` directly; update the `<meta name="pg-plus-api-base" ...>` tag inside each `index.html` if the backend base URL changes.
 - Celery workers continue to use `make celery` / `make celery-beat` (or `uv run celery -A backend.core worker|beat`) once Redis is available.
 
 ## Coding Style & Naming Conventions

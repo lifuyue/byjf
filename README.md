@@ -100,17 +100,18 @@ cd frontends
 pnpm install
 ```
 
-### 7. 启动前端（统一入口 + iframe 工作台）
+### 7. 启动前端（统一入口 + 子站映射）
 
 ```bash
-# 同时启动学生/教师/管理端（对应 5173/5174/5175）
-pnpm dev
+# 推荐：只启学生端 dev server（会自动托管 /gsapp/teacher 与 /gsapp/admin）
+pnpm --filter pg-plus-web-student dev
 
-# 或按需启动
-pnpm --filter pg-plus-web-student dev   # 统一入口 /gsapp/
-pnpm --filter pg-plus-web-teacher dev   # 仅教师 iframe
-pnpm --filter pg-plus-web-admin dev     # 仅管理员 iframe
+# 可选：单独跑原始教师/管理员 Vite 项目，用于开发调试
+pnpm --filter pg-plus-web-teacher dev   # 监听 5175，产出 iframe 静态页
+pnpm --filter pg-plus-web-admin dev     # 监听 5174，产出 iframe 静态页
 ```
+
+`pnpm --filter pg-plus-web-student dev` 会在 `http://localhost:5173/gsapp/` 暴露统一入口，并通过 dev server 的中间件把 `frontends/web-teacher` 映射到 `/gsapp/teacher/`，把 `frontends/web-admin` 映射到 `/gsapp/admin/`。因此测试教师/管理员界面时无需再开额外端口。
 
 前端日志默认写入 `frontends/logs/*.log`，按需 `CTRL+C` 停止。
 
@@ -123,10 +124,10 @@ pnpm --filter pg-plus-web-admin dev     # 仅管理员 iframe
 | 角色 | 用户名 | 密码 | 说明 |
 | --- | --- | --- | --- |
 | 学生 | `student001` | `Passw0rd!` | 查看学生仪表盘、报名项目、提交志愿 |
-| 教师 | `teacher001` | `Passw0rd!` | 发布项目、审核志愿工时和学生审批 |
-| 管理员 | `admin001` | `Passw0rd!` | 进入管理员模板控制台（目前为静态页面） |
+| 教师 | `teacher001` | `Passw0rd!` | 访问 `http://localhost:5173/gsapp/teacher/index.html` 或从统一入口重定向 |
+| 管理员 | `admin001` | `Passw0rd!` | 访问 `http://localhost:5173/gsapp/admin/index.html` 或从统一入口重定向 |
 
-> 如果单独访问 `http://localhost:5175/gsapp/teacher/` 或 `http://localhost:5174/gsapp/admin/`，页面会提示并重定向回 `/gsapp/` 确保走统一登录流程。
+> `pnpm --filter pg-plus-web-student dev` 已托管所有页面；仅在需要单独调试教师/管理员包时才运行 `pnpm dev:teacher` / `pnpm dev:admin`。
 
 > 调整 API 域名：`frontends/web-student/index.html`、`frontends/web-teacher/index.html` 中的 `<meta name="pg-plus-api-base" ...>` 控制后端地址；部署到其他主机时修改该 meta 即可。
 
