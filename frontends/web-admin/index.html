@@ -8,15 +8,8 @@
     <link rel="stylesheet" href="style/common.css">
     <link rel="stylesheet" href="style/admin-common.css">
     <link rel="stylesheet" href="style/admin-index.css">
-    <script>
-        (function () {
-            const params = new URLSearchParams(window.location.search);
-            const isEmbedded = params.has('embedded') || window.top !== window.self;
-            if (!isEmbedded) {
-                window.location.replace('/gsapp/?view=admin');
-            }
-        })();
-    </script>
+    <meta name="pg-plus-api-base" content="http://localhost:8000/api/v1">
+    <meta name="pg-plus-login-base" content="../" data-dev="http://localhost:5173/gsapp">
 </head>
 <body>
     <!-- 头部 -->

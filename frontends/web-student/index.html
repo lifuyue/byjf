@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="pg-plus-api-base" content="http://localhost:8000/api/v1">
-    <meta name="pg-plus-teacher-frame" content="../web-teacher/index.html" data-dev="http://localhost:5175/">
-    <meta name="pg-plus-admin-frame" content="../web-admin/index.html" data-dev="http://localhost:5174/">
     <title>保研加分小助手学生端</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles/common.css">
     <link rel="stylesheet" href="styles/index.css">
+    <meta name="pg-plus-teacher-home" content="../web-teacher/index.html" data-dev="http://localhost:5173/gsapp/teacher/index.html">
+    <meta name="pg-plus-admin-home" content="../web-admin/index.html" data-dev="http://localhost:5173/gsapp/admin/index.html">
 </head>
 <body>
     <div class="header-container">
@@ -190,55 +190,6 @@
     </div>
     </section>
 
-    <section class="dashboard-view hidden" id="teacherDashboard">
-        <div class="embedded-frame-wrapper">
-            <div class="embedded-hint">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <div>
-                    <h3>教师端工作台</h3>
-                    <p>发布加分项目、审核志愿工时与学生申请。</p>
-                </div>
-            </div>
-            <iframe id="teacherAppFrame" class="embedded-frame" title="教师端应用"></iframe>
-        </div>
-    </section>
-
-    <section class="dashboard-view hidden" id="adminDashboard">
-        <div class="embedded-frame-wrapper">
-            <div class="embedded-hint">
-                <i class="fas fa-user-shield"></i>
-                <div>
-                    <h3>管理员控制台</h3>
-                    <p>全局管理用户与加分策略，监控审核进度。</p>
-                </div>
-            </div>
-            <iframe id="adminAppFrame" class="embedded-frame" title="管理员应用"></iframe>
-        </div>
-    </section>
-    </div>
-
-    <!-- 登录弹窗 -->
-    <div class="modal" id="authModal">
-        <div class="modal-content auth-modal-content">
-            <div class="modal-icon">
-                <i class="fas fa-user-circle"></i>
-            </div>
-            <h3 class="modal-title">登录保研加分小助手</h3>
-            <p class="modal-text" id="loginHint">使用教师 / 学生 / 管理员账号登录，系统会为您加载对应的工作台。</p>
-            <form class="auth-form" id="authForm">
-                <div class="form-field">
-                    <input type="text" id="loginUsername" placeholder="用户名" autocomplete="username" required />
-                </div>
-                <div class="form-field">
-                    <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" required />
-                </div>
-                <div class="form-hint" id="authFormHint"></div>
-                <div class="modal-actions">
-                    <button type="button" class="modal-btn modal-btn-cancel" id="cancelAuth">取消</button>
-                    <button type="submit" class="modal-btn modal-btn-confirm">登录</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <!-- 退出确认弹窗 -->

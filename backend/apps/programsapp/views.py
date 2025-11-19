@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -76,6 +78,28 @@ class ProjectSelectionViewSet(viewsets.ModelViewSet):
         if project_id:
             queryset = queryset.filter(project_id=project_id)
         return queryset
+
+    def perform_create(self, serializer):
+        project = serializer.validated_data["project"]
+        student_account = serializer.validated_data.get("student_account")
+        if not student_account:
+            raise ValidationError("学生账号不能为空。")
+        if project.status != TeacherProject.ProjectStatus.ACTIVE:
+            raise ValidationError("该项目暂未开放报名，请选择其他项目。")
+        if project.selected_count >= project.slots:
+            raise ValidationError("该项目名额已满，请选择其他项目。")
+        existing = ProjectSelection.objects.filter(
+            project=project,
+            student_account=student_account,
+            status=ProjectSelection.SelectionStatus.ACTIVE,
+        ).exists()
+        if existing:
+            raise ValidationError("您已报名该项目，请勿重复提交。")
+        try:
+            with transaction.atomic():
+                serializer.save(status=ProjectSelection.SelectionStatus.ACTIVE)
+        except IntegrityError as exc:
+            raise ValidationError("报名冲突，请稍后再试。") from exc
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         instance = self.get_object()

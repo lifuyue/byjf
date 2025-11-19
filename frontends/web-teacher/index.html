@@ -4,19 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="pg-plus-api-base" content="http://localhost:8000/api/v1" />
+    <meta name="pg-plus-login-base" content="../" data-dev="http://localhost:5173/gsapp" />
     <title>保研加分小助手教师端</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="styles/common.css" />
     <link rel="stylesheet" href="styles/dashboard.css" />
-    <script>
-      (function () {
-        const params = new URLSearchParams(window.location.search);
-        const isEmbedded = params.has('embedded') || window.top !== window.self;
-        if (!isEmbedded) {
-          window.location.replace('/gsapp/?view=teacher');
-        }
-      })();
-    </script>
   </head>
   <body>
     <div class="header-container">

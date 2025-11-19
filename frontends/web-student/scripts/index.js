@@ -21,52 +21,60 @@ const rankingCard = document.getElementById('rankingCard');
 const planCard = document.getElementById('planCard');
 const competitionCard = document.getElementById('competitionCard');
 const studentDashboard = document.getElementById('studentDashboard');
-const teacherDashboard = document.getElementById('teacherDashboard');
-const adminDashboard = document.getElementById('adminDashboard');
-const teacherAppFrame = document.getElementById('teacherAppFrame');
-const adminAppFrame = document.getElementById('adminAppFrame');
+const teacherDashboard = null;
+const adminDashboard = null;
+const teacherAppFrame = null;
+const adminAppFrame = null;
 const roleBanner = document.getElementById('roleBanner');
 const roleBadge = document.getElementById('roleBadge');
 const roleBannerText = document.getElementById('roleBannerText');
-const authModal = document.getElementById('authModal');
-const authForm = document.getElementById('authForm');
-const cancelAuth = document.getElementById('cancelAuth');
-const loginUsernameInput = document.getElementById('loginUsername');
-const loginPasswordInput = document.getElementById('loginPassword');
-const loginHint = document.getElementById('loginHint');
-const authFormHint = document.getElementById('authFormHint');
+const authModal = null;
+const authForm = null;
+const cancelAuth = null;
+const loginUsernameInput = null;
+const loginPasswordInput = null;
+const loginHint = null;
+const authFormHint = null;
 
 const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
+const teacherHomeMeta = document.querySelector('meta[name="pg-plus-teacher-home"]');
+const adminHomeMeta = document.querySelector('meta[name="pg-plus-admin-home"]');
 const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
 const PROGRAMS_API_BASE = `${API_BASE}/programs`;
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const ACCESS_TOKEN_KEY = 'pg_plus_access_token';
 const REFRESH_TOKEN_KEY = 'pg_plus_refresh_token';
 const USER_PROFILE_KEY = 'pg_plus_user_profile';
-const teacherFrameMeta = document.querySelector('meta[name="pg-plus-teacher-frame"]');
-const adminFrameMeta = document.querySelector('meta[name="pg-plus-admin-frame"]');
+const USER_DATA_KEY = 'userData';
+const USER_ROLE_KEY = 'userRole';
+const IS_LOGGED_IN_KEY = 'isLoggedIn';
+const COOKIE_OPTIONS = 'path=/; SameSite=Lax';
 const STUDENT_DEV_PORT = '5173';
 const isStudentDevServer = typeof window !== 'undefined' && window.location?.port === STUDENT_DEV_PORT;
 
-function resolveFrameBase(metaElement, fallbackPort, defaultValue) {
+function resolveRoleHome(metaElement, defaultValue) {
     const baseValue = (metaElement?.getAttribute('content') || defaultValue || '').trim();
     if (isStudentDevServer) {
         const devOverride = (metaElement?.dataset.dev || '').trim();
         if (devOverride) {
             return devOverride;
         }
-        if (fallbackPort) {
-            const { protocol, hostname } = window.location;
-            const normalizedProtocol = protocol || 'http:';
-            const devHost = hostname || 'localhost';
-            return `${normalizedProtocol}//${devHost}:${fallbackPort}/`;
-        }
     }
     return baseValue;
 }
 
-const TEACHER_FRAME_BASE = resolveFrameBase(teacherFrameMeta, '5175', '../web-teacher/index.html');
-const ADMIN_FRAME_BASE = resolveFrameBase(adminFrameMeta, '5174', '../web-admin/index.html');
+function setSharedCookie(key, value) {
+    document.cookie = `${key}=${encodeURIComponent(value)}; ${COOKIE_OPTIONS}`;
+}
+
+function getSharedCookie(key) {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function clearSharedCookie(key) {
+    document.cookie = `${key}=; Max-Age=0; ${COOKIE_OPTIONS}`;
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const requestedView = urlParams.get('view');
@@ -80,7 +88,7 @@ let teacherFrameLoaded = false;
 let adminFrameLoaded = false;
 
 function getAccessToken() {
-    return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
+    return localStorage.getItem(ACCESS_TOKEN_KEY) || getSharedCookie(ACCESS_TOKEN_KEY) || '';
 }
 
 function buildAuthHeaders(extra = {}) {
@@ -210,6 +218,12 @@ const DEFAULT_VOLUNTEER_RECORDS = [
 
 let currentRoleHint = requestedView || '';
 let hasInitializedStudentView = false;
+const LOGIN_PAGE_URL = 'login.html';
+const STUDENT_HOME_URL = 'index.html';
+const TEACHER_HOME_URL = resolveRoleHome(teacherHomeMeta, '../web-teacher/index.html');
+const ADMIN_HOME_URL = resolveRoleHome(adminHomeMeta, '../web-admin/index.html');
+
+enforceStudentEntry();
 
 function broadcastAuthState() {
     const access = getAccessToken();
@@ -234,11 +248,26 @@ function broadcastAuthClear() {
     }
 }
 
-function buildEmbeddedUrl(base) {
-    if (!base) {
-        return '';
+function redirectToRoleHome(role) {
+    if (role === 'teacher') {
+        window.location.replace(TEACHER_HOME_URL);
+    } else if (role === 'admin') {
+        window.location.replace(ADMIN_HOME_URL);
+    } else {
+        window.location.replace(STUDENT_HOME_URL);
     }
-    return base.includes('?') ? `${base}&embedded=1` : `${base}?embedded=1`;
+}
+
+function enforceStudentEntry() {
+    const token = getAccessToken();
+    const profile = getStoredProfile();
+    if (!token || !profile || !profile.username) {
+        window.location.replace(LOGIN_PAGE_URL);
+        return;
+    }
+    if (profile.role && profile.role !== 'student') {
+        redirectToRoleHome(profile.role);
+    }
 }
 
 function persistSessionTokens(access, refresh, profile) {
@@ -246,14 +275,22 @@ function persistSessionTokens(access, refresh, profile) {
     localStorage.setItem(REFRESH_TOKEN_KEY, refresh || '');
     localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
     currentUserProfile = profile;
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', profile.role || 'student');
-    localStorage.setItem('userData', JSON.stringify({
+    const normalizedRole = profile.role || 'student';
+    const packedProfile = JSON.stringify({
         username: profile.username,
         nickname: profile.username,
         studentId: profile.student_id || '',
         role: profile.role
-    }));
+    });
+    localStorage.setItem(IS_LOGGED_IN_KEY, 'true');
+    localStorage.setItem(USER_ROLE_KEY, normalizedRole);
+    localStorage.setItem(USER_DATA_KEY, packedProfile);
+    setSharedCookie(ACCESS_TOKEN_KEY, access);
+    setSharedCookie(REFRESH_TOKEN_KEY, refresh || '');
+    setSharedCookie(USER_PROFILE_KEY, JSON.stringify(profile));
+    setSharedCookie(USER_DATA_KEY, packedProfile);
+    setSharedCookie(USER_ROLE_KEY, normalizedRole);
+    setSharedCookie(IS_LOGGED_IN_KEY, 'true');
     broadcastAuthState();
 }
 
@@ -263,9 +300,15 @@ function clearSession() {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_PROFILE_KEY);
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userData');
+    localStorage.removeItem(IS_LOGGED_IN_KEY);
+    localStorage.removeItem(USER_ROLE_KEY);
+    localStorage.removeItem(USER_DATA_KEY);
+    clearSharedCookie(ACCESS_TOKEN_KEY);
+    clearSharedCookie(REFRESH_TOKEN_KEY);
+    clearSharedCookie(USER_PROFILE_KEY);
+    clearSharedCookie(USER_DATA_KEY);
+    clearSharedCookie(USER_ROLE_KEY);
+    clearSharedCookie(IS_LOGGED_IN_KEY);
     broadcastAuthClear();
 }
 
@@ -286,7 +329,8 @@ function getStoredProfile() {
         return currentUserProfile;
     }
     try {
-        const stored = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}');
+        const raw = localStorage.getItem(USER_PROFILE_KEY) || getSharedCookie(USER_PROFILE_KEY) || '{}';
+        const stored = JSON.parse(raw);
         currentUserProfile = stored && stored.username ? stored : null;
         return currentUserProfile;
     } catch {
@@ -339,61 +383,33 @@ async function fetchProfileFromServer() {
 }
 
 function openAuthModal() {
-    if (!authModal) return;
-    authModal.style.display = 'flex';
-    loginUsernameInput?.focus();
-    if (authFormHint) {
-        authFormHint.textContent = '';
-    }
-    if (currentRoleHint === 'teacher') {
-        loginHint.textContent = '请输入教师账号（如 teacher001 / Passw0rd!）完成登录。';
-    } else if (currentRoleHint === 'admin') {
-        loginHint.textContent = '请输入管理员账号（如 admin001 / Passw0rd!）完成登录。';
-    } else {
-        loginHint.textContent = '使用教师 / 学生 / 管理员账号登录，系统会为您加载对应的工作台。';
-    }
+    window.location.replace('login.html');
 }
 
 function closeAuthModal() {
-    if (authModal) {
-        authModal.style.display = 'none';
-    }
     currentRoleHint = '';
+    if (authFormHint) {
+        authFormHint.textContent = '';
+    }
 }
 
 function showRoleWorkspace(role) {
     activeRole = role;
+    if (role !== 'student') {
+        redirectToRoleHome(role);
+        return;
+    }
     if (roleBanner) {
         roleBanner.classList.remove('hidden');
-        const roleText = role === 'teacher' ? '教师端'
-            : role === 'admin' ? '管理员端'
-            : '学生端';
         if (roleBadge) {
-            roleBadge.textContent = `当前身份：${roleText}`;
+            roleBadge.textContent = '当前身份：学生端';
         }
         if (roleBannerText) {
-            roleBannerText.textContent = `您已登录 ${roleText}，系统已为您加载对应工作台。`;
+            roleBannerText.textContent = '您已登录学生端，系统已为您加载个人工作台。';
         }
     }
-    const isStudent = role === 'student';
-    const isTeacher = role === 'teacher';
-    const isAdmin = role === 'admin';
     if (studentDashboard) {
-        studentDashboard.classList.toggle('hidden', !isStudent);
-    }
-    if (teacherDashboard) {
-        teacherDashboard.classList.toggle('hidden', !isTeacher);
-    }
-    if (adminDashboard) {
-        adminDashboard.classList.toggle('hidden', !isAdmin);
-    }
-    if (isTeacher && teacherAppFrame && !teacherFrameLoaded) {
-        teacherAppFrame.src = buildEmbeddedUrl(TEACHER_FRAME_BASE);
-        teacherFrameLoaded = true;
-    }
-    if (isAdmin && adminAppFrame && !adminFrameLoaded) {
-        adminAppFrame.src = buildEmbeddedUrl(ADMIN_FRAME_BASE);
-        adminFrameLoaded = true;
+        studentDashboard.classList.remove('hidden');
     }
 }
 
@@ -401,27 +417,12 @@ function showLoggedOutState() {
     loginBtn.style.display = 'block';
     userInfo.style.display = 'none';
     logoutBtn.style.display = 'none';
-    if (roleBanner) {
-        roleBanner.classList.add('hidden');
-    }
+    roleBanner?.classList.add('hidden');
     if (studentDashboard) {
         studentDashboard.classList.remove('hidden');
     }
-    if (teacherDashboard) {
-        teacherDashboard.classList.add('hidden');
-    }
-    if (adminDashboard) {
-        adminDashboard.classList.add('hidden');
-    }
-    if (teacherAppFrame) {
-        teacherAppFrame.src = '';
-        teacherFrameLoaded = false;
-    }
-    if (adminAppFrame) {
-        adminAppFrame.src = '';
-        adminFrameLoaded = false;
-    }
     hideContent();
+    window.location.replace(LOGIN_PAGE_URL);
 }
 
 function updateHeaderProfile(profile) {
@@ -666,7 +667,8 @@ function getCurrentStudentProfile() {
         return currentUserProfile;
     }
     try {
-        const cached = JSON.parse(localStorage.getItem('userData') || '{}');
+        const raw = localStorage.getItem(USER_DATA_KEY) || getSharedCookie(USER_DATA_KEY) || '{}';
+        const cached = JSON.parse(raw);
         return cached || {};
     } catch {
         return {};

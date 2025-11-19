@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@9.1.0",
   "scripts": {
-    "dev": "pnpm run -r --parallel dev",
+    "dev": "pnpm --filter pg-plus-web-student dev",
     "dev:student": "pnpm --filter pg-plus-web-student dev",
     "dev:admin": "pnpm --filter pg-plus-web-admin dev",
     "dev:teacher": "pnpm --filter pg-plus-web-teacher dev",

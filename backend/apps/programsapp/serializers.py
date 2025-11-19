@@ -25,7 +25,7 @@ class TeacherProjectSerializer(serializers.ModelSerializer):
 
 
 class ProjectSelectionSerializer(serializers.ModelSerializer):
-    project_id = serializers.CharField(source="project_id", read_only=True)
+    project_id = serializers.CharField(read_only=True)
 
     class Meta:
         model = ProjectSelection

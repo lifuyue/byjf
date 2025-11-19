@@ -21,10 +21,44 @@ const competitionCard = document.getElementById('competitionCard');
 const featureCards = [policyCard, rankingCard, planCard, competitionCard].filter(Boolean);
 
 const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
+const loginMeta = document.querySelector('meta[name="pg-plus-login-base"]');
 const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
 const PROGRAMS_API_BASE = `${API_BASE}/programs`;
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const ACCESS_TOKEN_KEY = 'pg_plus_access_token';
+const REFRESH_TOKEN_KEY = 'pg_plus_refresh_token';
+const urlParams = new URLSearchParams(window.location.search);
+const isEmbedded = urlParams.has('embedded') || window.top !== window.self;
+const TEACHER_DEV_PORT = '5175';
+const LOGIN_BASE = resolveLoginBase(loginMeta, TEACHER_DEV_PORT, '../');
+const LOGIN_PAGE_URL = `${LOGIN_BASE.replace(/\/$/, '')}/login.html?next=teacher`;
+const USER_DATA_KEY = 'userData';
+const USER_ROLE_KEY = 'userRole';
+const IS_LOGGED_IN_KEY = 'isLoggedIn';
+const USER_PROFILE_KEY = 'pg_plus_user_profile';
+const COOKIE_OPTIONS = 'path=/; SameSite=Lax';
+
+function resolveLoginBase(metaElement, devPort, defaultValue) {
+    const devHint = metaElement?.dataset.dev?.trim();
+    const fallback = (metaElement?.getAttribute('content') || defaultValue || '').trim() || '../web-student';
+    if (devHint && window.location.port === devPort) {
+        return devHint.replace(/\/$/, '');
+    }
+    return fallback.replace(/\/$/, '');
+}
+
+function setSharedCookie(key, value) {
+    document.cookie = `${key}=${encodeURIComponent(value)}; ${COOKIE_OPTIONS}`;
+}
+
+function getSharedCookie(key) {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function clearSharedCookie(key) {
+    document.cookie = `${key}=; Max-Age=0; ${COOKIE_OPTIONS}`;
+}
 
 try {
     if (window.parent) {
@@ -39,33 +73,101 @@ window.addEventListener('message', event => {
     if (payload.type === 'pg-plus-auth-sync') {
         if (payload.access) {
             localStorage.setItem(ACCESS_TOKEN_KEY, payload.access);
+            setSharedCookie(ACCESS_TOKEN_KEY, payload.access);
+        }
+        if (payload.refresh) {
+            localStorage.setItem(REFRESH_TOKEN_KEY, payload.refresh);
+            setSharedCookie(REFRESH_TOKEN_KEY, payload.refresh);
         }
         if (payload.profile) {
-            localStorage.setItem('userData', JSON.stringify({
+            const packed = JSON.stringify({
                 username: payload.profile.username,
                 nickname: payload.profile.username,
                 role: payload.profile.role
-            }));
-            localStorage.setItem('userRole', payload.profile.role || 'teacher');
-            localStorage.setItem('isLoggedIn', 'true');
+            });
+            localStorage.setItem(USER_DATA_KEY, packed);
+            localStorage.setItem(USER_ROLE_KEY, payload.profile.role || 'teacher');
+            localStorage.setItem(IS_LOGGED_IN_KEY, 'true');
+            setSharedCookie(USER_DATA_KEY, packed);
+            setSharedCookie(USER_ROLE_KEY, payload.profile.role || 'teacher');
+            setSharedCookie(IS_LOGGED_IN_KEY, 'true');
+            setSharedCookie(USER_PROFILE_KEY, JSON.stringify(payload.profile));
         }
     } else if (payload.type === 'pg-plus-auth-clear') {
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem('userData');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('isLoggedIn');
+        clearTeacherSession();
     }
 });
 
 function getAccessToken() {
-    return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
+    const stored = localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (stored) {
+        return stored;
+    }
+    const cookieToken = getSharedCookie(ACCESS_TOKEN_KEY);
+    if (cookieToken) {
+        localStorage.setItem(ACCESS_TOKEN_KEY, cookieToken);
+        return cookieToken;
+    }
+    return '';
+}
+
+function getStoredUserData() {
+    try {
+        const raw = localStorage.getItem(USER_DATA_KEY) || getSharedCookie(USER_DATA_KEY) || '{}';
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.username) {
+            if (!localStorage.getItem(USER_DATA_KEY)) {
+                localStorage.setItem(USER_DATA_KEY, raw);
+            }
+            return parsed;
+        }
+    } catch {
+        return {};
+    }
+    return {};
+}
+
+ensureStandaloneSession();
+
+function ensureStandaloneSession() {
+    if (isEmbedded) {
+        return;
+    }
+    const token = getAccessToken();
+    const stored = getStoredUserData();
+    const role = stored.role || getSharedCookie(USER_ROLE_KEY);
+    if (!token || role !== 'teacher') {
+        clearTeacherSession();
+        redirectToLogin();
+    }
+}
+
+function redirectToLogin() {
+    window.location.replace(LOGIN_PAGE_URL);
+}
+
+function clearTeacherSession() {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(USER_DATA_KEY);
+    localStorage.removeItem(USER_ROLE_KEY);
+    localStorage.removeItem(IS_LOGGED_IN_KEY);
+    localStorage.removeItem(USER_PROFILE_KEY);
+    clearSharedCookie(ACCESS_TOKEN_KEY);
+    clearSharedCookie(USER_DATA_KEY);
+    clearSharedCookie(USER_ROLE_KEY);
+    clearSharedCookie(IS_LOGGED_IN_KEY);
+    clearSharedCookie(USER_PROFILE_KEY);
+    clearSharedCookie(REFRESH_TOKEN_KEY);
 }
 
 function notifyAuthExpired(message) {
-    const info = message || '登录状态已过期，请返回统一入口重新登录。';
+    const info = message || '登录状态已过期，请重新登录。';
     alert(info);
-    if (window.top) {
+    if (isEmbedded && window.top) {
         window.top.postMessage({ type: 'pg-plus-auth-required', source: 'teacher' }, '*');
+    } else {
+        clearTeacherSession();
+        redirectToLogin();
     }
 }
 
@@ -893,8 +995,8 @@ function refreshProjectsManually() {
 
 // 检查登录状态
 function checkLoginStatus() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const isLoggedIn = (localStorage.getItem(IS_LOGGED_IN_KEY) || getSharedCookie(IS_LOGGED_IN_KEY)) === 'true';
+    const userData = getStoredUserData();
 
     if (isLoggedIn && userData.username) {
         // 已登录状态
@@ -998,7 +1100,7 @@ function showContent() {
 
 // 登录按钮点击事件 - 跳转到登录页面
 loginBtn.addEventListener('click', function() {
-    window.location.href = 'login教师端.html';
+    window.location.href = LOGIN_PAGE_URL;
 });
 
 // 功能卡片点击事件（未登录时）
@@ -1032,8 +1134,7 @@ confirmLogout.addEventListener('click', function() {
     logoutModal.querySelector('.modal-actions').style.display = 'none';
 
     setTimeout(function() {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userData');
+        clearTeacherSession();
 
         logoutModal.style.display = 'none';
         logoutModal.querySelector('.modal-icon').innerHTML = '<i class="fas fa-sign-out-alt"></i>';
@@ -1042,7 +1143,7 @@ confirmLogout.addEventListener('click', function() {
         logoutModal.querySelector('.modal-actions').style.display = 'flex';
 
         checkLoginStatus();
-        alert('已成功退出登录！');
+        redirectToLogin();
     }, 1000);
 });
 
