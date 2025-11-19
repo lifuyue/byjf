@@ -45,8 +45,28 @@ const REFRESH_TOKEN_KEY = 'pg_plus_refresh_token';
 const USER_PROFILE_KEY = 'pg_plus_user_profile';
 const teacherFrameMeta = document.querySelector('meta[name="pg-plus-teacher-frame"]');
 const adminFrameMeta = document.querySelector('meta[name="pg-plus-admin-frame"]');
-const TEACHER_FRAME_BASE = teacherFrameMeta?.getAttribute('content') || '../web-teacher/index.html';
-const ADMIN_FRAME_BASE = adminFrameMeta?.getAttribute('content') || '../web-admin/index.html';
+const STUDENT_DEV_PORT = '5173';
+const isStudentDevServer = typeof window !== 'undefined' && window.location?.port === STUDENT_DEV_PORT;
+
+function resolveFrameBase(metaElement, fallbackPort, defaultValue) {
+    const baseValue = (metaElement?.getAttribute('content') || defaultValue || '').trim();
+    if (isStudentDevServer) {
+        const devOverride = (metaElement?.dataset.dev || '').trim();
+        if (devOverride) {
+            return devOverride;
+        }
+        if (fallbackPort) {
+            const { protocol, hostname } = window.location;
+            const normalizedProtocol = protocol || 'http:';
+            const devHost = hostname || 'localhost';
+            return `${normalizedProtocol}//${devHost}:${fallbackPort}/`;
+        }
+    }
+    return baseValue;
+}
+
+const TEACHER_FRAME_BASE = resolveFrameBase(teacherFrameMeta, '5175', '../web-teacher/index.html');
+const ADMIN_FRAME_BASE = resolveFrameBase(adminFrameMeta, '5174', '../web-admin/index.html');
 
 const urlParams = new URLSearchParams(window.location.search);
 const requestedView = urlParams.get('view');
