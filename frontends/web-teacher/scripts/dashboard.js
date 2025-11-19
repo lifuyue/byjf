@@ -24,18 +24,71 @@ const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
 const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
 const PROGRAMS_API_BASE = `${API_BASE}/programs`;
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
+const ACCESS_TOKEN_KEY = 'pg_plus_access_token';
+
+try {
+    if (window.parent) {
+        window.parent.postMessage({ type: 'pg-plus-frame-ready', source: 'teacher' }, '*');
+    }
+} catch (err) {
+    console.warn('无法向父窗口发送初始化消息', err);
+}
+
+window.addEventListener('message', event => {
+    const payload = event?.data || {};
+    if (payload.type === 'pg-plus-auth-sync') {
+        if (payload.access) {
+            localStorage.setItem(ACCESS_TOKEN_KEY, payload.access);
+        }
+        if (payload.profile) {
+            localStorage.setItem('userData', JSON.stringify({
+                username: payload.profile.username,
+                nickname: payload.profile.username,
+                role: payload.profile.role
+            }));
+            localStorage.setItem('userRole', payload.profile.role || 'teacher');
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+    } else if (payload.type === 'pg-plus-auth-clear') {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem('userData');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('isLoggedIn');
+    }
+});
+
+function getAccessToken() {
+    return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
+}
+
+function notifyAuthExpired(message) {
+    const info = message || '登录状态已过期，请返回统一入口重新登录。';
+    alert(info);
+    if (window.top) {
+        window.top.postMessage({ type: 'pg-plus-auth-required', source: 'teacher' }, '*');
+    }
+}
 
 async function apiRequest(path, options = {}) {
+    const token = getAccessToken();
+    if (!token) {
+        notifyAuthExpired('请先通过统一入口完成登录。');
+        throw new Error('未登录');
+    }
     const url = `${PROGRAMS_API_BASE}${path}`;
     const payload = {
-        credentials: 'include',
         ...options,
         headers: {
             ...JSON_HEADERS,
-            ...(options.headers || {})
+            ...(options.headers || {}),
+            Authorization: `Bearer ${token}`
         }
     };
     const response = await fetch(url, payload);
+    if (response.status === 401) {
+        notifyAuthExpired();
+        throw new Error('登录已过期');
+    }
     if (!response.ok) {
         const detail = await response.json().catch(() => ({}));
         const message = detail.detail || detail.message || `请求失败（${response.status}）`;

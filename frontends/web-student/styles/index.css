@@ -892,6 +892,97 @@ body {
             box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
         }
 
+        .dashboard-view.hidden {
+            display: none;
+        }
+
+        .role-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f1f5f9;
+            border: 1px solid #d7dfee;
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin: 20px auto;
+            width: min(960px, 90%);
+        }
+
+        .role-banner.hidden {
+            display: none;
+        }
+
+        .role-chip {
+            background: #4a6fa5;
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .embedded-frame-wrapper {
+            width: min(1200px, 94%);
+            margin: 0 auto 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .embedded-hint {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 16px 20px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(79, 114, 205, 0.1);
+            border: 1px solid rgba(74, 111, 165, 0.15);
+            color: #1f2937;
+        }
+
+        .embedded-hint i {
+            font-size: 24px;
+            color: #4a6fa5;
+        }
+
+        .embedded-frame {
+            width: 100%;
+            min-height: 80vh;
+            border: none;
+            border-radius: 20px;
+            background: #fff;
+            box-shadow: 0 25px 55px rgba(15, 23, 42, 0.22);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .auth-form .form-field input {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #d7dfee;
+            padding: 12px 14px;
+            font-size: 15px;
+        }
+
+        .auth-form .form-field input:focus {
+            outline: none;
+            border-color: #4a6fa5;
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.15);
+        }
+
+        .auth-form .form-hint {
+            min-height: 18px;
+            font-size: 13px;
+            color: #b91c1c;
+            text-align: left;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .container {

@@ -12,6 +12,7 @@ from apps.programsapp.models import (
     TeacherProject,
     VolunteerRecord,
 )
+from apps.scoringapp.models import Student
 
 TEACHER_PROJECTS: list[dict[str, Any]] = [
     {
@@ -124,6 +125,27 @@ STUDENT_REVIEW_TICKETS: list[dict[str, Any]] = [
     },
 ]
 
+DEMO_ACCOUNTS = [
+    {
+        "username": "student001",
+        "student_id": "20250001",
+        "role": Student.ROLE_STUDENT,
+        "password": "Passw0rd!",
+    },
+    {
+        "username": "teacher001",
+        "student_id": "T2025001",
+        "role": Student.ROLE_TEACHER,
+        "password": "Passw0rd!",
+    },
+    {
+        "username": "admin001",
+        "student_id": "A2025001",
+        "role": Student.ROLE_ADMIN,
+        "password": "Passw0rd!",
+    },
+]
+
 
 class Command(BaseCommand):
     help = "将前端 mock 数据同步至数据库，便于演示。"
@@ -143,6 +165,7 @@ class Command(BaseCommand):
             TeacherProject.objects.all().delete()
             StudentReviewTicket.objects.all().delete()
 
+        self._seed_accounts()
         self._seed_projects()
         self._seed_selections()
         self._seed_volunteers()
@@ -212,3 +235,20 @@ class Command(BaseCommand):
                     "review_notes": payload["review_notes"],
                 },
             )
+
+    def _seed_accounts(self) -> None:
+        for payload in DEMO_ACCOUNTS:
+            student, _ = Student.objects.update_or_create(
+                username=payload["username"],
+                defaults={
+                    "student_id": payload["student_id"],
+                    "role": payload["role"],
+                },
+            )
+            student.role = payload["role"]
+            if payload["role"] in (Student.ROLE_TEACHER, Student.ROLE_ADMIN):
+                student.is_staff = True
+            if payload["role"] == Student.ROLE_ADMIN:
+                student.is_superuser = True
+            student.set_password(payload["password"])
+            student.save()

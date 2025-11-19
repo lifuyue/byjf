@@ -1,4 +1,36 @@
 // admin-common.js - 管理员公共功能
+const ADMIN_ACCESS_TOKEN_KEY = 'pg_plus_access_token';
+
+try {
+    if (window.parent) {
+        window.parent.postMessage({ type: 'pg-plus-frame-ready', source: 'admin' }, '*');
+    }
+} catch (error) {
+    console.warn('管理员 iframe 初始化失败', error);
+}
+
+window.addEventListener('message', event => {
+    const payload = event?.data || {};
+    if (payload.type === 'pg-plus-auth-sync') {
+        if (payload.access) {
+            localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, payload.access);
+        }
+        if (payload.profile) {
+            localStorage.setItem('userData', JSON.stringify({
+                username: payload.profile.username,
+                nickname: payload.profile.username,
+                role: payload.profile.role
+            }));
+            localStorage.setItem('userRole', payload.profile.role || 'admin');
+            localStorage.setItem('isLoggedIn', 'true');
+        }
+    } else if (payload.type === 'pg-plus-auth-clear') {
+        localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+        localStorage.removeItem('userData');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('isLoggedIn');
+    }
+});
 
 // 管理员权限检查
 function checkAdminPermission() {

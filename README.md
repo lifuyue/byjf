@@ -35,7 +35,7 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 - Django 5 + DRF + Simple JWT：默认使用 SQLite，可通过环境变量切换到 MySQL 8。
 - Celery、Redis、Nginx、Gunicorn/Daphne 的配置示例已经就绪（需按需开启）。
 - 所有前端位于 `frontends/`，通过 pnpm workspace 统一安装依赖、运行 dev server、执行 lint/typecheck/build。
-- `frontends/web-student`、`frontends/web-teacher` 暂以静态仪表板+脚本提供真实 UI；`frontends/web-admin` 复用了用户提供的备份模板。
+- `frontends/web-student` 现在扮演统一入口：负责登录、身份判定和学生仪表盘渲染，并通过 iframe 嵌入 `web-teacher` 与 `web-admin`（二者仍保留独立 Vite 项目以便开发，直接访问会重定向回统一入口）。
 - 教师端/学生端的“教师加分项目 + 志愿工时认证”模块已经接入后端 `apps.programsapp`。所有项目、报名、志愿记录、学生审核票据均持久化在 SQLite/MySQL 中，并通过 `/api/v1/programs/*` API 统一管理，仍保留一审→二审→三审的流程、多阶段驳回/重提、OCR 标记等互动；学生端可在线编辑/删除待审记录并自动回到一审，教师端刷新即可看到数据库中的真实状态。
 
 ## 环境要求
@@ -46,34 +46,89 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 - SQLite 3（默认演示用）
 - MySQL 8、Redis 6（可选，部署或联调时使用）
 
-## 快速上手（跨平台）
+## 快速上手（Windows/macOS/Linux 通用流程）
 
-1. 复制环境变量：`cp .env.example .env` 并根据需要调整数据库、Redis、JWT 配置。
-2. 安装 Python 依赖：
-   ```bash
-   python -m pip install --upgrade uv
-   uv sync --all-groups
-   ```
-3. 初始化数据库并启动后端：
-   ```bash
-   uv run python backend/manage.py migrate --noinput
-   uv run python backend/manage.py seed_demo_data --force  # 可选：导入教师项目/志愿示例数据
-   uv run python backend/manage.py runserver 0.0.0.0:8000
-   ```
-4. 安装前端依赖并启动 dev server：
-   ```bash
-   cd frontends
-   pnpm install            # 安装 workspace 依赖
-   pnpm dev                # 并行启动学生/教师/管理端（默认端口 5173/5174/5175）
-   # 单独启动：pnpm dev:student / pnpm dev:teacher / pnpm dev:admin
-   ```
-5. 访问：
-   - http://localhost:5173/gsapp/ （学生端）
-   - http://localhost:5174/gsapp/admin/ （管理端）
-- http://localhost:5175/gsapp/teacher/ （教师端）
-- http://localhost:8000/api/v1/… （后台 API）
+所有命令可直接在 PowerShell、CMD、Terminal 或 Git Bash 中执行，无需额外安装 GNU Make。
 
-> 提示：`frontends/web-student/index.html`、`frontends/web-teacher/index.html` 默认通过 `<meta name="pg-plus-api-base" content="http://localhost:8000/api/v1">` 指向后端 API。若后端部署在其他域名/端口，可直接修改该 meta 或在构建阶段注入 `VITE_API_BASE`。
+### 1. 准备依赖
+
+- Python 3.11+
+- Node.js 18+ 与 pnpm 9+
+- `python -m pip install --upgrade uv`
+
+### 2. 配置环境
+
+```bash
+cp .env.example .env   # Windows 可使用 copy .env.example .env
+```
+
+如需自定义数据库或 Redis，可编辑 `.env`，默认使用 `backend/db.sqlite3`。
+
+### 3. 安装后端依赖（仅首次）
+
+```bash
+uv sync --all-groups
+```
+
+### 4. 迁移并写入示例数据
+
+```bash
+uv run python backend/manage.py migrate --noinput            # 初始化 SQLite
+uv run python backend/manage.py seed_demo_data --force       # 写入示例项目/志愿/审核 + demo 账号
+```
+
+Seed 命令会创建以下账号：`student001`、`teacher001`、`admin001`，密码均为 `Passw0rd!`。
+
+### 5. 启动 Django 开发服务器
+
+```bash
+uv run python backend/manage.py runserver 0.0.0.0:8000
+```
+
+如果需要确认服务就绪，可在另一终端运行：
+
+```bash
+curl http://127.0.0.1:8000/api/health/
+# 或 PowerShell
+Invoke-WebRequest http://127.0.0.1:8000/api/health/
+```
+
+### 6. 安装前端依赖（仅首次）
+
+```bash
+cd frontends
+pnpm install
+```
+
+### 7. 启动前端（统一入口 + iframe 工作台）
+
+```bash
+# 同时启动学生/教师/管理端（对应 5173/5174/5175）
+pnpm dev
+
+# 或按需启动
+pnpm --filter pg-plus-web-student dev   # 统一入口 /gsapp/
+pnpm --filter pg-plus-web-teacher dev   # 仅教师 iframe
+pnpm --filter pg-plus-web-admin dev     # 仅管理员 iframe
+```
+
+前端日志默认写入 `frontends/logs/*.log`，按需 `CTRL+C` 停止。
+
+### 8. 登录体验
+
+1. 浏览器打开 `http://localhost:5173/gsapp/`（唯一入口）。
+2. 点击“登录”并输入示例账号（如下表）。
+3. 系统会根据角色自动切换工作台：学生直接渲染原有仪表盘，教师/管理员通过 iframe 加载 `web-teacher` / `web-admin`。
+
+| 角色 | 用户名 | 密码 | 说明 |
+| --- | --- | --- | --- |
+| 学生 | `student001` | `Passw0rd!` | 查看学生仪表盘、报名项目、提交志愿 |
+| 教师 | `teacher001` | `Passw0rd!` | 发布项目、审核志愿工时和学生审批 |
+| 管理员 | `admin001` | `Passw0rd!` | 进入管理员模板控制台（目前为静态页面） |
+
+> 如果单独访问 `http://localhost:5175/gsapp/teacher/` 或 `http://localhost:5174/gsapp/admin/`，页面会提示并重定向回 `/gsapp/` 确保走统一登录流程。
+
+> 调整 API 域名：`frontends/web-student/index.html`、`frontends/web-teacher/index.html` 中的 `<meta name="pg-plus-api-base" ...>` 控制后端地址；部署到其他主机时修改该 meta 即可。
 
 ### Windows 无需 GNU Make
 

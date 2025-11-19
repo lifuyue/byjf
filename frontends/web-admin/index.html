@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="style/common.css">
     <link rel="stylesheet" href="style/admin-common.css">
     <link rel="stylesheet" href="style/admin-index.css">
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const isEmbedded = params.has('embedded') || window.top !== window.self;
+            if (!isEmbedded) {
+                window.location.replace('/gsapp/?view=admin');
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- 头部 -->

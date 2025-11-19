@@ -20,23 +20,74 @@ const policyCard = document.getElementById('policyCard');
 const rankingCard = document.getElementById('rankingCard');
 const planCard = document.getElementById('planCard');
 const competitionCard = document.getElementById('competitionCard');
+const studentDashboard = document.getElementById('studentDashboard');
+const teacherDashboard = document.getElementById('teacherDashboard');
+const adminDashboard = document.getElementById('adminDashboard');
+const teacherAppFrame = document.getElementById('teacherAppFrame');
+const adminAppFrame = document.getElementById('adminAppFrame');
+const roleBanner = document.getElementById('roleBanner');
+const roleBadge = document.getElementById('roleBadge');
+const roleBannerText = document.getElementById('roleBannerText');
+const authModal = document.getElementById('authModal');
+const authForm = document.getElementById('authForm');
+const cancelAuth = document.getElementById('cancelAuth');
+const loginUsernameInput = document.getElementById('loginUsername');
+const loginPasswordInput = document.getElementById('loginPassword');
+const loginHint = document.getElementById('loginHint');
+const authFormHint = document.getElementById('authFormHint');
 
 const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
 const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
 const PROGRAMS_API_BASE = `${API_BASE}/programs`;
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
+const ACCESS_TOKEN_KEY = 'pg_plus_access_token';
+const REFRESH_TOKEN_KEY = 'pg_plus_refresh_token';
+const USER_PROFILE_KEY = 'pg_plus_user_profile';
+const teacherFrameMeta = document.querySelector('meta[name="pg-plus-teacher-frame"]');
+const adminFrameMeta = document.querySelector('meta[name="pg-plus-admin-frame"]');
+const TEACHER_FRAME_BASE = teacherFrameMeta?.getAttribute('content') || '../web-teacher/index.html';
+const ADMIN_FRAME_BASE = adminFrameMeta?.getAttribute('content') || '../web-admin/index.html';
+
+const urlParams = new URLSearchParams(window.location.search);
+const requestedView = urlParams.get('view');
+if (requestedView) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+let currentUserProfile = null;
+let activeRole = null;
+let teacherFrameLoaded = false;
+let adminFrameLoaded = false;
+
+function getAccessToken() {
+    return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
+}
+
+function buildAuthHeaders(extra = {}) {
+    const token = getAccessToken();
+    if (!token) {
+        return { ...extra };
+    }
+    return {
+        Authorization: `Bearer ${token}`,
+        ...extra
+    };
+}
 
 async function apiRequest(path, options = {}) {
     const url = `${PROGRAMS_API_BASE}${path}`;
     const payload = {
-        credentials: 'include',
         ...options,
         headers: {
             ...JSON_HEADERS,
-            ...(options.headers || {})
+            ...(options.headers || {}),
+            ...buildAuthHeaders()
         }
     };
     const response = await fetch(url, payload);
+    if (response.status === 401) {
+        handleUnauthorized();
+    }
     if (!response.ok) {
         const detail = await response.json().catch(() => ({}));
         const message = detail.detail || detail.message || `请求失败（${response.status}）`;
@@ -137,6 +188,308 @@ const DEFAULT_VOLUNTEER_RECORDS = [
     }
 ];
 
+let currentRoleHint = requestedView || '';
+let hasInitializedStudentView = false;
+
+function broadcastAuthState() {
+    const access = getAccessToken();
+    const refresh = localStorage.getItem(REFRESH_TOKEN_KEY) || '';
+    const profile = getStoredProfile();
+    const payload = { type: 'pg-plus-auth-sync', access, refresh, profile };
+    if (teacherAppFrame?.contentWindow) {
+        teacherAppFrame.contentWindow.postMessage(payload, '*');
+    }
+    if (adminAppFrame?.contentWindow) {
+        adminAppFrame.contentWindow.postMessage(payload, '*');
+    }
+}
+
+function broadcastAuthClear() {
+    const payload = { type: 'pg-plus-auth-clear' };
+    if (teacherAppFrame?.contentWindow) {
+        teacherAppFrame.contentWindow.postMessage(payload, '*');
+    }
+    if (adminAppFrame?.contentWindow) {
+        adminAppFrame.contentWindow.postMessage(payload, '*');
+    }
+}
+
+function buildEmbeddedUrl(base) {
+    if (!base) {
+        return '';
+    }
+    return base.includes('?') ? `${base}&embedded=1` : `${base}?embedded=1`;
+}
+
+function persistSessionTokens(access, refresh, profile) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, access);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refresh || '');
+    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+    currentUserProfile = profile;
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', profile.role || 'student');
+    localStorage.setItem('userData', JSON.stringify({
+        username: profile.username,
+        nickname: profile.username,
+        studentId: profile.student_id || '',
+        role: profile.role
+    }));
+    broadcastAuthState();
+}
+
+function clearSession() {
+    currentUserProfile = null;
+    activeRole = null;
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(USER_PROFILE_KEY);
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userData');
+    broadcastAuthClear();
+}
+
+function handleUnauthorized() {
+    clearSession();
+    showLoggedOutState();
+    if (authModal) {
+        openAuthModal();
+        if (authFormHint) {
+            authFormHint.textContent = '登录状态已过期，请重新登录。';
+        }
+    }
+    throw new Error('登录状态已过期，请重新登录');
+}
+
+function getStoredProfile() {
+    if (currentUserProfile) {
+        return currentUserProfile;
+    }
+    try {
+        const stored = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}');
+        currentUserProfile = stored && stored.username ? stored : null;
+        return currentUserProfile;
+    } catch {
+        return null;
+    }
+}
+
+async function performLogin(username, password) {
+    const response = await fetch(`${API_BASE}/auth/login/`, {
+        method: 'POST',
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ username, password })
+    });
+    if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        const message = detail.detail || detail.message || '用户名或密码错误';
+        throw new Error(message);
+    }
+    const data = await response.json();
+    persistSessionTokens(data.access, data.refresh, data.user);
+    return data.user;
+}
+
+async function fetchProfileFromServer() {
+    const response = await fetch(`${API_BASE}/auth/me/`, {
+        headers: {
+            ...JSON_HEADERS,
+            ...buildAuthHeaders()
+        }
+    });
+    if (response.status === 401) {
+        handleUnauthorized();
+    }
+    if (!response.ok) {
+        throw new Error('获取用户信息失败');
+    }
+    const profile = await response.json();
+    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+    currentUserProfile = profile;
+    localStorage.setItem('userData', JSON.stringify({
+        username: profile.username,
+        nickname: profile.username,
+        studentId: profile.student_id || '',
+        role: profile.role
+    }));
+    localStorage.setItem('userRole', profile.role || 'student');
+    localStorage.setItem('isLoggedIn', 'true');
+    broadcastAuthState();
+    return profile;
+}
+
+function openAuthModal() {
+    if (!authModal) return;
+    authModal.style.display = 'flex';
+    loginUsernameInput?.focus();
+    if (authFormHint) {
+        authFormHint.textContent = '';
+    }
+    if (currentRoleHint === 'teacher') {
+        loginHint.textContent = '请输入教师账号（如 teacher001 / Passw0rd!）完成登录。';
+    } else if (currentRoleHint === 'admin') {
+        loginHint.textContent = '请输入管理员账号（如 admin001 / Passw0rd!）完成登录。';
+    } else {
+        loginHint.textContent = '使用教师 / 学生 / 管理员账号登录，系统会为您加载对应的工作台。';
+    }
+}
+
+function closeAuthModal() {
+    if (authModal) {
+        authModal.style.display = 'none';
+    }
+    currentRoleHint = '';
+}
+
+function showRoleWorkspace(role) {
+    activeRole = role;
+    if (roleBanner) {
+        roleBanner.classList.remove('hidden');
+        const roleText = role === 'teacher' ? '教师端'
+            : role === 'admin' ? '管理员端'
+            : '学生端';
+        if (roleBadge) {
+            roleBadge.textContent = `当前身份：${roleText}`;
+        }
+        if (roleBannerText) {
+            roleBannerText.textContent = `您已登录 ${roleText}，系统已为您加载对应工作台。`;
+        }
+    }
+    const isStudent = role === 'student';
+    const isTeacher = role === 'teacher';
+    const isAdmin = role === 'admin';
+    if (studentDashboard) {
+        studentDashboard.classList.toggle('hidden', !isStudent);
+    }
+    if (teacherDashboard) {
+        teacherDashboard.classList.toggle('hidden', !isTeacher);
+    }
+    if (adminDashboard) {
+        adminDashboard.classList.toggle('hidden', !isAdmin);
+    }
+    if (isTeacher && teacherAppFrame && !teacherFrameLoaded) {
+        teacherAppFrame.src = buildEmbeddedUrl(TEACHER_FRAME_BASE);
+        teacherFrameLoaded = true;
+    }
+    if (isAdmin && adminAppFrame && !adminFrameLoaded) {
+        adminAppFrame.src = buildEmbeddedUrl(ADMIN_FRAME_BASE);
+        adminFrameLoaded = true;
+    }
+}
+
+function showLoggedOutState() {
+    loginBtn.style.display = 'block';
+    userInfo.style.display = 'none';
+    logoutBtn.style.display = 'none';
+    if (roleBanner) {
+        roleBanner.classList.add('hidden');
+    }
+    if (studentDashboard) {
+        studentDashboard.classList.remove('hidden');
+    }
+    if (teacherDashboard) {
+        teacherDashboard.classList.add('hidden');
+    }
+    if (adminDashboard) {
+        adminDashboard.classList.add('hidden');
+    }
+    if (teacherAppFrame) {
+        teacherAppFrame.src = '';
+        teacherFrameLoaded = false;
+    }
+    if (adminAppFrame) {
+        adminAppFrame.src = '';
+        adminFrameLoaded = false;
+    }
+    hideContent();
+}
+
+function updateHeaderProfile(profile) {
+    if (!profile) {
+        userNickname.textContent = '未登录';
+        userAccount.textContent = '';
+        userAvatar.textContent = '访';
+        return;
+    }
+    loginBtn.style.display = 'none';
+    userInfo.style.display = 'flex';
+    logoutBtn.style.display = 'flex';
+    const displayName = profile.username || '用户';
+    userNickname.textContent = displayName;
+    userAccount.textContent = profile.username || '';
+    userAvatar.textContent = displayName.charAt(0).toUpperCase();
+}
+
+async function activateStudentExperience() {
+    try {
+        await Promise.all([
+            loadStudentSelectionsFromApi(),
+            loadTeacherProjectsData({ skipRender: true }),
+            loadVolunteerRecordsData({ skipRender: true })
+        ]);
+    } catch (error) {
+        console.warn(error);
+    }
+    hasInitializedStudentView = true;
+    showContent();
+    renderTeacherProjectsForStudent();
+    renderStudentVolunteerRecords();
+}
+
+async function enterWorkspace(profile) {
+    currentUserProfile = profile;
+    updateHeaderProfile(profile);
+    showRoleWorkspace(profile.role || 'student');
+    if ((profile.role || 'student') === 'student') {
+        await activateStudentExperience();
+    } else {
+        hideContent();
+        setTeacherProjectsSectionLoggedIn(false);
+        setVolunteerSectionLoggedIn(false);
+    }
+}
+
+async function bootstrapSession() {
+    const token = getAccessToken();
+    if (!token) {
+        showLoggedOutState();
+        return;
+    }
+    try {
+        const profile = await fetchProfileFromServer();
+        await enterWorkspace(profile);
+    } catch (error) {
+        console.warn(error);
+        clearSession();
+        showLoggedOutState();
+    }
+}
+
+async function handleAuthSubmit(event) {
+    event.preventDefault();
+    if (authFormHint) {
+        authFormHint.textContent = '';
+    }
+    const username = loginUsernameInput?.value.trim() || '';
+    const password = loginPasswordInput?.value.trim() || '';
+    if (!username || !password) {
+        if (authFormHint) {
+            authFormHint.textContent = '请输入用户名和密码';
+        }
+        return;
+    }
+    try {
+        const profile = await performLogin(username, password);
+        closeAuthModal();
+        if (loginUsernameInput) loginUsernameInput.value = '';
+        if (loginPasswordInput) loginPasswordInput.value = '';
+        await enterWorkspace(profile);
+    } catch (error) {
+        if (authFormHint) {
+            authFormHint.textContent = error.message || '登录失败，请稍后再试';
+        }
+    }
+}
 let teacherProjects = [];
 let studentProjectSelections = new Map();
 let volunteerRecords = [];
@@ -289,8 +642,12 @@ async function loadVolunteerRecordsData(options = {}) {
 }
 
 function getCurrentStudentProfile() {
+    if (currentUserProfile) {
+        return currentUserProfile;
+    }
     try {
-        return JSON.parse(localStorage.getItem('userData') || '{}');
+        const cached = JSON.parse(localStorage.getItem('userData') || '{}');
+        return cached || {};
     } catch {
         return {};
     }
@@ -705,26 +1062,6 @@ async function refreshTeacherProjects() {
 }
 
 // ------------------- 登录状态 -------------------
-function checkLoginStatus() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-
-    if (isLoggedIn && userData.username) {
-        loginBtn.style.display = 'none';
-        userInfo.style.display = 'flex';
-        logoutBtn.style.display = 'flex';
-        userNickname.textContent = userData.nickname || userData.username;
-        userAccount.textContent = userData.username;
-        userAvatar.textContent = (userData.nickname || userData.username).charAt(0);
-        showContent();
-    } else {
-        loginBtn.style.display = 'block';
-        userInfo.style.display = 'none';
-        logoutBtn.style.display = 'none';
-        hideContent();
-    }
-}
-
 function hideContent() {
     chartContainer.innerHTML = `
         <div class="login-prompt">
@@ -757,6 +1094,7 @@ function hideContent() {
     earnedPointsHeader.style.display = 'block';
 
     studentProjectSelections = new Map();
+    teacherProjects = [];
     volunteerRecords = [];
 
     [policyCard, rankingCard, planCard, competitionCard].forEach(card => {
@@ -870,13 +1208,11 @@ function showContent() {
 
     setTeacherProjectsSectionLoggedIn(true);
     setVolunteerSectionLoggedIn(true);
-    refreshTeacherProjects();
-    loadVolunteerRecordsData();
 }
 
 // ------------------- 事件绑定 -------------------
 loginBtn.addEventListener('click', function() {
-    window.location.href = 'login.html';
+    openAuthModal();
 });
 
 function addCardClickListeners() {
@@ -906,34 +1242,55 @@ confirmLogout.addEventListener('click', function() {
     logoutModal.querySelector('.modal-actions').style.display = 'none';
 
     setTimeout(function() {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userData');
-
+        clearSession();
         logoutModal.style.display = 'none';
         logoutModal.querySelector('.modal-icon').innerHTML = '<i class="fas fa-sign-out-alt"></i>';
         logoutModal.querySelector('.modal-title').textContent = '确认退出登录';
         logoutModal.querySelector('.modal-text').textContent = '您确定要退出当前账号吗？退出后需要重新登录才能访问系统功能。';
         logoutModal.querySelector('.modal-actions').style.display = 'flex';
-
-        checkLoginStatus();
-        alert('已成功退出登录！');
-    }, 1000);
+        showLoggedOutState();
+    }, 600);
 });
 
 window.addEventListener('click', function(e) {
     if (e.target === logoutModal) {
         logoutModal.style.display = 'none';
     }
+    if (e.target === authModal) {
+        closeAuthModal();
+    }
+});
+
+cancelAuth?.addEventListener('click', function() {
+    closeAuthModal();
+});
+
+if (authForm) {
+    authForm.addEventListener('submit', handleAuthSubmit);
+}
+
+window.addEventListener('message', function(event) {
+    const payload = event?.data || {};
+    if (payload.type === 'pg-plus-auth-required') {
+        currentRoleHint = payload.source || '';
+        clearSession();
+        showLoggedOutState();
+        openAuthModal();
+    } else if (payload.type === 'pg-plus-frame-ready') {
+        if (payload.source === 'teacher') {
+            teacherFrameLoaded = true;
+        }
+        if (payload.source === 'admin') {
+            adminFrameLoaded = true;
+        }
+        if (getAccessToken()) {
+            broadcastAuthState();
+        }
+    }
 });
 
 // ------------------- 页面初始化 -------------------
-document.addEventListener('DOMContentLoaded', async function() {
-    await Promise.all([
-        loadTeacherProjectsData({ skipRender: true }),
-        loadVolunteerRecordsData({ skipRender: true }),
-        loadStudentSelectionsFromApi()
-    ]);
-    checkLoginStatus();
+document.addEventListener('DOMContentLoaded', function() {
     addCardClickListeners();
 
     if (teacherProjectsList) {
@@ -958,6 +1315,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    teacherAppFrame?.addEventListener('load', function() {
+        teacherFrameLoaded = true;
+        if (getAccessToken()) {
+            broadcastAuthState();
+        }
+    });
+
+    adminAppFrame?.addEventListener('load', function() {
+        adminFrameLoaded = true;
+        if (getAccessToken()) {
+            broadcastAuthState();
+        }
+    });
+
     document.querySelectorAll('.action-card').forEach(card => {
         card.addEventListener('mouseenter', function() {
             if (!this.classList.contains('disabled')) {
@@ -979,6 +1350,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             this.style.transform = 'translateX(0)';
         });
     });
+
+    if (requestedView && !getAccessToken()) {
+        currentRoleHint = requestedView;
+        openAuthModal();
+    }
+    bootstrapSession();
 });
 
 // 测试函数
