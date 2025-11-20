@@ -123,14 +123,22 @@ class VolunteerRecordViewSet(viewsets.ModelViewSet):
     def _required_roles_for_action(self) -> Sequence[str]:
         teacher_only = {"create", "update", "partial_update", "destroy", "review"}
         admin_only = {"override"}
+        read_only = {"list", "retrieve"}
         if self.action in admin_only:
             return ("admin",)
         if self.action in teacher_only:
             return ("teacher",)
+        if self.action in read_only:
+            return ("student", "teacher", "admin")
         return ("teacher", "admin")
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = getattr(self.request, "user", None)
+        if user and getattr(user, "role", "") == "student":
+            username = getattr(user, "username", "")
+            student_id = getattr(user, "student_id", "")
+            queryset = queryset.filter(Q(student_account=username) | Q(student_id=student_id))
         student_account = self.request.query_params.get("student_account")
         if student_account:
             queryset = queryset.filter(student_account=student_account)

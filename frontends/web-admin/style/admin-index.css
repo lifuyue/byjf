@@ -386,6 +386,57 @@ body {
     box-shadow: 0 4px 8px rgba(74, 111, 165, 0.3);
 }
 
+/* 占位卡片（待开发功能） */
+.placeholder-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border: 1px solid #eef2f7;
+}
+
+.placeholder-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 28px;
+}
+
+.placeholder-card h2 {
+    margin: 10px 0;
+    color: #1f2937;
+}
+
+.placeholder-card p {
+    color: #6b7280;
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+.placeholder-link {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.placeholder-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.28);
+}
+
 .realtime-list {
     display: flex;
     flex-direction: column;

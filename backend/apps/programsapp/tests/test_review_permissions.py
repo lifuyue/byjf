@@ -91,3 +91,33 @@ def test_admin_can_override_reviewed_record(api_client, admin_user):
     assert record.review_stage == VolunteerRecord.ReviewStage.STAGE1
     assert record.review_trail
     assert record.review_trail[-1]["note"].startswith("管理员复核")
+
+
+@pytest.mark.django_db
+def test_student_can_only_list_their_own_records(api_client, student_user, another_student):
+    mine = VolunteerRecord.objects.create(
+        student_name="李华",
+        student_account=student_user.username,
+        student_id=student_user.student_id,
+        activity="图书馆志愿",
+        hours=Decimal("1.0"),
+        proof="",
+        require_ocr=False,
+    )
+    other = VolunteerRecord.objects.create(
+        student_name="王敏",
+        student_account=another_student.username,
+        student_id=another_student.student_id,
+        activity="校庆志愿",
+        hours=Decimal("2.0"),
+        proof="",
+        require_ocr=False,
+    )
+    api_client.force_authenticate(user=student_user)
+
+    response = api_client.get("/api/v1/programs/volunteer-records/")
+    assert response.status_code == 200
+    data = response.json()
+    ids = {item["id"] for item in data}
+    assert mine.id in ids
+    assert other.id not in ids
