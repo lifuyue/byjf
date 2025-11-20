@@ -107,3 +107,8 @@ class ReviewDecisionSerializer(serializers.Serializer):
     )
     reviewer = serializers.CharField(allow_blank=True, required=False, default="系统")
     note = serializers.CharField(allow_blank=True, required=False, default="")
+
+
+class OverrideDecisionSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=["reopen", "cancel"])
+    note = serializers.CharField(allow_blank=True, required=False, default="")

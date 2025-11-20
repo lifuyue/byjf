@@ -1,257 +1,158 @@
-// 加分审核页面功能
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('加分审核页面开始加载');
-    
-    // 初始化页面
+// 加分审核列表（管理员只读 + 复核操作）
+document.addEventListener('DOMContentLoaded', () => {
     initAuditPage();
-    
-    // 设置事件监听器
     setupEventListeners();
-    
-    // 加载申请数据
     loadApplications();
 });
 
-// 初始化审核页面
 function initAuditPage() {
-    console.log('初始化审核页面');
-    
-    // 设置筛选器默认值为待审核
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
         statusFilter.value = 'pending';
     }
-    
-    // 更新统计数据
-    updateStatistics();
 }
 
-// 更新统计数据
-function updateStatistics() {
-    // 模拟统计数据
+// 根据实际数据更新统计
+function updateStatistics(applications = []) {
     const totalCount = document.getElementById('totalCount');
     const pendingCount = document.getElementById('pendingCount');
     const approvedCount = document.getElementById('approvedCount');
     const rejectedCount = document.getElementById('rejectedCount');
-    
-    if (totalCount) totalCount.textContent = '156';
-    if (pendingCount) pendingCount.textContent = '12';
-    if (approvedCount) approvedCount.textContent = '120';
-    if (rejectedCount) rejectedCount.textContent = '24';
+
+    const stats = applications.reduce(
+        (acc, app) => {
+            acc.total += 1;
+            if (app.status === 'pending') acc.pending += 1;
+            if (app.status === 'approved') acc.approved += 1;
+            if (app.status === 'rejected') acc.rejected += 1;
+            return acc;
+        },
+        { total: 0, pending: 0, approved: 0, rejected: 0 }
+    );
+
+    if (totalCount) totalCount.textContent = String(stats.total);
+    if (pendingCount) pendingCount.textContent = String(stats.pending);
+    if (approvedCount) approvedCount.textContent = String(stats.approved);
+    if (rejectedCount) rejectedCount.textContent = String(stats.rejected);
 }
 
-// 设置事件监听器
 function setupEventListeners() {
-    // 筛选控件
     const statusFilter = document.getElementById('statusFilter');
     const typeFilter = document.getElementById('typeFilter');
     const timeFilter = document.getElementById('timeFilter');
-    
+
     if (statusFilter) statusFilter.addEventListener('change', loadApplications);
     if (typeFilter) typeFilter.addEventListener('change', loadApplications);
     if (timeFilter) timeFilter.addEventListener('change', loadApplications);
-    
-    // 分页按钮
+
     const prevBtn = document.querySelector('.prev-btn');
     const nextBtn = document.querySelector('.next-btn');
-    
-    if (prevBtn) prevBtn.addEventListener('click', goToPrevPage);
-    if (nextBtn) nextBtn.addEventListener('click', goToNextPage);
-    
-    // 模态框控制
+
+    if (prevBtn) prevBtn.addEventListener('click', () => console.log('上一页'));
+    if (nextBtn) nextBtn.addEventListener('click', () => console.log('下一页'));
+
     setupModalControls();
 }
 
-// 设置模态框控制
 function setupModalControls() {
     const auditModal = document.getElementById('auditModal');
-    const confirmModal = document.getElementById('confirmModal');
     const closeAuditModal = document.getElementById('closeAuditModal');
-    const rejectBtn = document.getElementById('rejectBtn');
-    const approveBtn = document.getElementById('approveBtn');
-    const cancelConfirm = document.getElementById('cancelConfirm');
-    const submitConfirm = document.getElementById('submitConfirm');
-    
-    // 关闭审核详情模态框
+    const reopenBtn = document.getElementById('reopenBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
     if (closeAuditModal) {
-        closeAuditModal.addEventListener('click', function() {
+        closeAuditModal.addEventListener('click', () => {
             if (auditModal) auditModal.style.display = 'none';
         });
     }
-    
-    // 审核按钮点击
-    if (rejectBtn) {
-        rejectBtn.addEventListener('click', function() {
-            showConfirmModal('reject');
-        });
+
+    if (reopenBtn) {
+        reopenBtn.addEventListener('click', () => handleOverride('reopen'));
     }
-    
-    if (approveBtn) {
-        approveBtn.addEventListener('click', function() {
-            showConfirmModal('approve');
-        });
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => handleOverride('cancel'));
     }
-    
-    // 确认模态框控制
-    if (cancelConfirm) {
-        cancelConfirm.addEventListener('click', function() {
-            if (confirmModal) confirmModal.style.display = 'none';
-        });
-    }
-    
-    if (submitConfirm) {
-        submitConfirm.addEventListener('click', function() {
-            submitAuditResult();
-        });
-    }
-    
-    // 点击模态框外部关闭
-    window.addEventListener('click', function(e) {
+
+    window.addEventListener('click', e => {
         if (e.target === auditModal) {
             auditModal.style.display = 'none';
         }
-        if (e.target === confirmModal) {
-            confirmModal.style.display = 'none';
-        }
     });
 }
 
-// 显示确认模态框
-function showConfirmModal(action) {
-    const confirmModal = document.getElementById('confirmModal');
-    const confirmIcon = document.getElementById('confirmIcon');
-    const confirmTitle = document.getElementById('confirmTitle');
-    const confirmText = document.getElementById('confirmText');
-    const studentName = document.getElementById('detailStudent').textContent;
-    const projectName = document.getElementById('detailProject').textContent;
-    
-    if (!confirmModal || !confirmIcon || !confirmTitle || !confirmText) return;
-    
-    if (action === 'approve') {
-        confirmIcon.className = 'fas fa-check-circle approve';
-        confirmTitle.textContent = '确认通过申请';
-        confirmText.textContent = `您确定要通过${studentName}的${projectName}申请吗？`;
-    } else {
-        confirmIcon.className = 'fas fa-times-circle reject';
-        confirmTitle.textContent = '确认不通过申请';
-        confirmText.textContent = `您确定要不通过${studentName}的${projectName}申请吗？`;
-    }
-    
-    confirmModal.style.display = 'flex';
-    confirmModal.dataset.action = action;
-}
-
-// 提交审核结果
-function submitAuditResult() {
-    const confirmModal = document.getElementById('confirmModal');
+function handleOverride(action) {
     const auditModal = document.getElementById('auditModal');
-    const action = confirmModal.dataset.action;
-    const reason = document.getElementById('auditReason').value.trim();
+    if (!auditModal) return;
     const currentAppId = auditModal.dataset.currentAppId;
-    
-    if (!reason) {
-        alert('请填写审核意见！');
+    const noteField = document.getElementById('auditReason');
+    const note = (noteField?.value || '').trim();
+
+    if (!currentAppId) return;
+    if (!note) {
+        alert('请填写复核说明后再提交。');
         return;
     }
-    
-    console.log(`提交审核结果: ${action}, 申请ID: ${currentAppId}, 理由: ${reason}`);
-    
-    // 更新申请状态
-    updateApplicationStatus(currentAppId, action, reason);
-    
-    // 模拟提交成功
-    setTimeout(function() {
-        if (confirmModal) confirmModal.style.display = 'none';
-        if (auditModal) auditModal.style.display = 'none';
-        
-        // 显示成功消息
-        showSuccessMessage(action === 'approve' ? '申请已通过' : '申请未通过');
-        
-        // 刷新申请列表和统计数据
-        loadApplications();
-        updateStatistics();
-    }, 1000);
-}
 
-// 更新申请状态
-function updateApplicationStatus(appId, action, reason) {
-    // 从localStorage获取申请数据
-    let applications = JSON.parse(localStorage.getItem('auditApplications') || '[]');
-    
-    // 找到对应的申请并更新状态
+    let applications = getStoredApplications();
+    const now = new Date().toLocaleString('zh-CN');
+    let found = false;
+
     applications = applications.map(app => {
-        if (app.id == appId) {
-            return {
-                ...app,
-                status: action === 'approve' ? 'approved' : 'rejected',
-                auditReason: reason,
-                auditTime: new Date().toLocaleString('zh-CN'),
-                auditor: '管理员'
-            };
+        if (String(app.id) === String(currentAppId)) {
+            found = true;
+            const corrections = Array.isArray(app.corrections) ? app.corrections : [];
+            const updated = { ...app };
+            if (action === 'reopen') {
+                updated.status = 'pending';
+                updated.review_stage = 'stage1';
+            } else {
+                updated.status = 'cancelled';
+            }
+            updated.corrections = [
+                {
+                    action,
+                    note,
+                    actor: '管理员',
+                    time: now
+                },
+                ...corrections
+            ];
+            return updated;
         }
         return app;
     });
-    
-    // 保存更新后的数据
-    localStorage.setItem('auditApplications', JSON.stringify(applications));
+
+    if (!found) return;
+
+    saveApplications(applications);
+    if (auditModal) auditModal.style.display = 'none';
+    if (noteField) noteField.value = '';
+    showSuccessMessage(action === 'reopen' ? '已发起复核，教师将重新审核' : '记录已作废');
+    loadApplications();
 }
 
-// 显示成功消息
-function showSuccessMessage(message) {
-    // 创建临时提示消息
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #27ae60;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 1001;
-        font-weight: 500;
-    `;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    // 3秒后自动移除
-    setTimeout(() => {
-        document.body.removeChild(toast);
-    }, 3000);
-}
-
-// 加载申请数据
 function loadApplications() {
     const applicationsList = document.getElementById('applicationsList');
     if (!applicationsList) return;
-    
-    // 获取或初始化申请数据
-    let applications = JSON.parse(localStorage.getItem('auditApplications') || '[]');
-    
-    // 如果没有数据，初始化模拟数据
-    if (applications.length === 0) {
-        applications = getMockApplications();
-        localStorage.setItem('auditApplications', JSON.stringify(applications));
-    }
-    
-    // 应用筛选条件
+
+    const applications = getStoredApplications();
+    updateStatistics(applications);
+
+    let filteredApplications = [...applications];
     const statusFilter = document.getElementById('statusFilter');
     const typeFilter = document.getElementById('typeFilter');
-    
-    let filteredApplications = applications;
-    
+
     if (statusFilter && statusFilter.value !== 'all') {
         filteredApplications = filteredApplications.filter(app => app.status === statusFilter.value);
     }
-    
+
     if (typeFilter && typeFilter.value !== 'all') {
         filteredApplications = filteredApplications.filter(app => app.type === typeFilter.value);
     }
-    
-    // 清空现有列表
+
     applicationsList.innerHTML = '';
-    
+
     if (filteredApplications.length === 0) {
         applicationsList.innerHTML = `
             <div class="no-data">
@@ -260,17 +161,30 @@ function loadApplications() {
             </div>
         `;
     } else {
-        // 生成申请项
         filteredApplications.forEach(app => {
             const applicationItem = createApplicationItem(app);
             applicationsList.appendChild(applicationItem);
         });
     }
-    
-    console.log(`显示 ${filteredApplications.length} 条申请数据，筛选条件: status=${statusFilter?.value}, type=${typeFilter?.value}`);
+
+    console.log(
+        `显示 ${filteredApplications.length} 条申请数据，筛选条件: status=${statusFilter?.value}, type=${typeFilter?.value}`
+    );
 }
 
-// 获取模拟申请数据
+function getStoredApplications() {
+    let applications = JSON.parse(localStorage.getItem('auditApplications') || '[]');
+    if (applications.length === 0) {
+        applications = getMockApplications();
+        saveApplications(applications);
+    }
+    return applications;
+}
+
+function saveApplications(applications) {
+    localStorage.setItem('auditApplications', JSON.stringify(applications));
+}
+
 function getMockApplications() {
     return [
         {
@@ -286,7 +200,10 @@ function getMockApplications() {
             points: 2.0,
             description: '参加了2023年全国大学生数学建模竞赛，获得国家级一等奖。团队成员包括我、李四、王五。',
             status: 'pending',
+            review_stage: 'stage1',
             time: '2024-01-15 14:30',
+            reviewTrail: [],
+            corrections: [],
             proofFiles: [
                 { name: '获奖证书.pdf', type: 'pdf' },
                 { name: '比赛照片.jpg', type: 'image' }
@@ -305,7 +222,10 @@ function getMockApplications() {
             points: 1.5,
             description: '参与导师的省级重点科研项目，负责核心模块开发，项目周期6个月。',
             status: 'pending',
+            review_stage: 'stage1',
             time: '2024-01-15 13:45',
+            reviewTrail: [],
+            corrections: [],
             proofFiles: [
                 { name: '项目结题报告.pdf', type: 'pdf' },
                 { name: '项目成果展示.pptx', type: 'file' }
@@ -324,10 +244,14 @@ function getMockApplications() {
             points: 3.0,
             description: '在IEEE Transactions期刊发表论文一篇，第一作者。',
             status: 'approved',
+            review_stage: 'completed',
             time: '2024-01-14 16:20',
             auditReason: '论文质量较高，符合加分标准',
-            auditTime: '2024-01-14 17:30',
-            auditor: '管理员',
+            reviewTrail: [
+                { stage: 'stage1', reviewer: '李老师', note: '资料齐全', timestamp: '2024-01-13 15:00' },
+                { stage: 'stage3', reviewer: '张教授', note: '通过终审', timestamp: '2024-01-14 17:30' }
+            ],
+            corrections: [],
             proofFiles: [
                 { name: '论文录用通知.pdf', type: 'pdf' },
                 { name: '论文全文.pdf', type: 'pdf' }
@@ -346,13 +270,12 @@ function getMockApplications() {
             points: 2.5,
             description: '获得国家发明专利授权，专利号：ZL202310123456.7',
             status: 'rejected',
+            review_stage: 'stage2',
             time: '2024-01-13 10:15',
             auditReason: '专利证明材料不完整，缺少专利证书扫描件',
-            auditTime: '2024-01-13 14:20',
-            auditor: '管理员',
-            proofFiles: [
-                { name: '专利申请受理书.pdf', type: 'pdf' }
-            ]
+            reviewTrail: [{ stage: 'stage2', reviewer: '审核老师', note: '材料不完整', timestamp: '2024-01-13 14:20' }],
+            corrections: [],
+            proofFiles: [{ name: '专利申请受理书.pdf', type: 'pdf' }]
         },
         {
             id: 5,
@@ -367,7 +290,10 @@ function getMockApplications() {
             points: 1.8,
             description: '参加全国大学生创新创业大赛，获得国家级银奖。',
             status: 'pending',
+            review_stage: 'stage1',
             time: '2024-01-12 09:30',
+            reviewTrail: [],
+            corrections: [],
             proofFiles: [
                 { name: '获奖证书.pdf', type: 'pdf' },
                 { name: '项目计划书.docx', type: 'file' }
@@ -386,7 +312,10 @@ function getMockApplications() {
             points: 3.5,
             description: '在Nature Communications期刊发表论文一篇。',
             status: 'pending',
+            review_stage: 'stage1',
             time: '2024-01-11 15:45',
+            reviewTrail: [],
+            corrections: [],
             proofFiles: [
                 { name: '论文全文.pdf', type: 'pdf' },
                 { name: '期刊封面.jpg', type: 'image' }
@@ -395,24 +324,25 @@ function getMockApplications() {
     ];
 }
 
-// 创建申请项
 function createApplicationItem(application) {
     const item = document.createElement('div');
     item.className = `application-item ${application.status}`;
     item.dataset.id = application.id;
-    
+
     const statusText = {
-        'pending': '待审核',
-        'approved': '已通过',
-        'rejected': '未通过'
+        pending: '待审核',
+        approved: '已通过',
+        rejected: '未通过',
+        cancelled: '已作废'
     };
-    
+
     const statusClass = {
-        'pending': 'status-pending',
-        'approved': 'status-approved',
-        'rejected': 'status-rejected'
+        pending: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        cancelled: 'status-cancelled'
     };
-    
+
     item.innerHTML = `
         <div class="application-header">
             <div class="student-info">
@@ -422,8 +352,8 @@ function createApplicationItem(application) {
                     <div class="student-meta">${application.studentId} | ${application.college}</div>
                 </div>
             </div>
-            <div class="application-status ${statusClass[application.status]}">
-                ${statusText[application.status]}
+            <div class="application-status ${statusClass[application.status] || ''}">
+                ${statusText[application.status] || '未知状态'}
             </div>
         </div>
         <div class="application-content">
@@ -439,21 +369,15 @@ function createApplicationItem(application) {
             <div class="application-level">${application.level}</div>
         </div>
     `;
-    
-    // 点击查看详情
-    item.addEventListener('click', function() {
-        showApplicationDetail(application);
-    });
-    
+
+    item.addEventListener('click', () => showApplicationDetail(application));
     return item;
 }
 
-// 显示申请详情
 function showApplicationDetail(application) {
     const modal = document.getElementById('auditModal');
     if (!modal) return;
-    
-    // 填充详情数据
+
     const detailStudent = document.getElementById('detailStudent');
     const detailStudentId = document.getElementById('detailStudentId');
     const detailCollege = document.getElementById('detailCollege');
@@ -463,7 +387,7 @@ function showApplicationDetail(application) {
     const detailLevel = document.getElementById('detailLevel');
     const detailPoints = document.getElementById('detailPoints');
     const detailDescription = document.getElementById('detailDescription');
-    
+
     if (detailStudent) detailStudent.textContent = application.student;
     if (detailStudentId) detailStudentId.textContent = application.studentId;
     if (detailCollege) detailCollege.textContent = application.college;
@@ -471,16 +395,15 @@ function showApplicationDetail(application) {
     if (detailType) detailType.textContent = application.typeText;
     if (detailProject) detailProject.textContent = application.project;
     if (detailLevel) detailLevel.textContent = application.level;
-    if (detailPoints) detailPoints.textContent = application.points + '分';
+    if (detailPoints) detailPoints.textContent = `${application.points}分`;
     if (detailDescription) detailDescription.textContent = application.description;
-    
-    // 更新证明材料
+
     const proofFiles = document.querySelector('.proof-files');
     if (proofFiles) {
         proofFiles.innerHTML = '';
-        application.proofFiles.forEach(file => {
-            const fileIcon = file.type === 'pdf' ? 'fa-file-pdf' : 
-                           file.type === 'image' ? 'fa-file-image' : 'fa-file';
+        (application.proofFiles || []).forEach(file => {
+            const fileIcon =
+                file.type === 'pdf' ? 'fa-file-pdf' : file.type === 'image' ? 'fa-file-image' : 'fa-file';
             const fileElement = document.createElement('a');
             fileElement.href = '#';
             fileElement.className = 'proof-file';
@@ -491,55 +414,120 @@ function showApplicationDetail(application) {
             proofFiles.appendChild(fileElement);
         });
     }
-    
-    // 清空审核意见
-    const auditReason = document.getElementById('auditReason');
-    if (auditReason) {
-        if (application.status === 'pending') {
-            auditReason.value = '';
-            auditReason.disabled = false;
-            auditReason.placeholder = '请输入审核意见（必填）...';
-        } else {
-            auditReason.value = application.auditReason || '无审核意见';
-            auditReason.disabled = true;
-            auditReason.placeholder = '';
-        }
-    }
-    
-    // 根据状态禁用/启用审核按钮
-    const rejectBtn = document.getElementById('rejectBtn');
-    const approveBtn = document.getElementById('approveBtn');
-    
-    if (rejectBtn && approveBtn) {
-        if (application.status !== 'pending') {
-            rejectBtn.disabled = true;
-            approveBtn.disabled = true;
-            rejectBtn.style.opacity = '0.5';
-            approveBtn.style.opacity = '0.5';
-            rejectBtn.textContent = '不通过（已审核）';
-            approveBtn.textContent = '通过（已审核）';
-        } else {
-            rejectBtn.disabled = false;
-            approveBtn.disabled = false;
-            rejectBtn.style.opacity = '1';
-            approveBtn.style.opacity = '1';
-            rejectBtn.innerHTML = '<i class="fas fa-times"></i> 不通过';
-            approveBtn.innerHTML = '<i class="fas fa-check"></i> 通过';
-        }
-    }
-    
+
+    renderAuditHistory(application);
+    renderCorrectionLogs(application);
+    setActionState(application);
+
     modal.style.display = 'flex';
     modal.dataset.currentAppId = application.id;
 }
 
-// 上一页
-function goToPrevPage() {
-    console.log('上一页');
+function renderAuditHistory(application) {
+    const historyContainer = document.getElementById('auditHistory');
+    if (!historyContainer) return;
+    const history = Array.isArray(application.reviewTrail) ? application.reviewTrail : [];
+    const parts = [];
+
+    history.forEach(log => {
+        parts.push(`
+            <div class="history-item">
+                <div class="history-meta">
+                    <span class="history-reviewer">${log.reviewer || '审核人'}</span>
+                    <span class="history-stage">${log.stage || ''}</span>
+                    <span class="history-time">${log.timestamp || ''}</span>
+                </div>
+                <div class="history-note">${log.note || '无备注'}</div>
+            </div>
+        `);
+    });
+
+    if (application.auditReason) {
+        parts.push(`
+            <div class="history-item teacher-latest">
+                <div class="history-meta">
+                    <span class="history-reviewer">教师审核</span>
+                    <span class="history-time">${application.auditTime || ''}</span>
+                </div>
+                <div class="history-note">${application.auditReason}</div>
+            </div>
+        `);
+    }
+
+    historyContainer.innerHTML = parts.length ? parts.join('') : '<p class="muted">暂无审核记录</p>';
 }
 
-// 下一页
-function goToNextPage() {
-    console.log('下一页');
+function renderCorrectionLogs(application) {
+    const correctionList = document.getElementById('correctionList');
+    if (!correctionList) return;
+    const corrections = Array.isArray(application.corrections) ? application.corrections : [];
+
+    if (!corrections.length) {
+        correctionList.innerHTML = '<p class="muted">暂无复核记录</p>';
+        return;
+    }
+
+    correctionList.innerHTML = corrections
+        .map(
+            log => `
+            <div class="history-item correction-item">
+                <div class="history-meta">
+                    <span class="history-reviewer">${log.actor || '管理员'}</span>
+                    <span class="history-time">${log.time || ''}</span>
+                </div>
+                <div class="history-note">
+                    ${log.action === 'reopen' ? '发起复核' : '作废记录'} ${log.note ? `：${log.note}` : ''}
+                </div>
+            </div>
+        `
+        )
+        .join('');
 }
 
-console.log('加分审核页面脚本加载完成');
+function setActionState(application) {
+    const noteField = document.getElementById('auditReason');
+    const reopenBtn = document.getElementById('reopenBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (!noteField || !reopenBtn || !cancelBtn) return;
+
+    const canOverride = application.status === 'approved' || application.status === 'rejected';
+    const isCancelled = application.status === 'cancelled';
+
+    if (canOverride) {
+        noteField.disabled = false;
+        noteField.placeholder = '填写复核说明后，可发起复核或作废';
+        reopenBtn.disabled = false;
+        cancelBtn.disabled = false;
+    } else {
+        noteField.value = '';
+        noteField.disabled = true;
+        noteField.placeholder = isCancelled ? '记录已作废' : '教师审核中，管理员仅查看';
+        reopenBtn.disabled = true;
+        cancelBtn.disabled = true;
+    }
+}
+
+// 轻量提示
+function showSuccessMessage(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #2563eb;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1001;
+        font-weight: 500;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        document.body.removeChild(toast);
+    }, 3000);
+}
+
+console.log('管理员审核总览脚本加载完成');

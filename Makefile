@@ -1,7 +1,8 @@
-.PHONY: setup backend-serve frontend-dev frontend-dev-admin frontend-dev-teacher fmt lint celery celery-beat openapi
+.PHONY: setup backend-serve backend-stop frontend-dev frontend-dev-admin frontend-dev-teacher frontend-start frontend-stop fmt lint celery celery-beat openapi
 
 UV ?= uv
 PNPM ?= pnpm
+FRONTENDS_DIR ?= frontends
 
 setup:
 	$(UV) sync --all-groups
@@ -11,14 +12,23 @@ backend-serve:
 	$(UV) run python backend/manage.py migrate --noinput
 	$(UV) run python backend/manage.py runserver 0.0.0.0:8000
 
+backend-stop:
+	- pkill -f "manage.py runserver 0.0.0.0:8000" || true
+
 frontend-dev:
-	cd frontends && $(PNPM) dev:student -- --open
+	cd $(FRONTENDS_DIR) && $(PNPM) --filter pg-plus-web-student dev -- --open
 
 frontend-dev-admin:
-	cd frontends && $(PNPM) dev:admin -- --open
+	@echo "Admin UI复用统一开发服务器（pg-plus-web-student）。请运行: make frontend-dev"
 
 frontend-dev-teacher:
-	cd frontends && $(PNPM) dev:teacher -- --open
+	@echo "Teacher UI复用统一开发服务器（pg-plus-web-student）。请运行: make frontend-dev"
+
+frontend-start:
+	cd $(FRONTENDS_DIR) && $(PNPM) --filter pg-plus-web-student dev
+
+frontend-stop:
+	- pkill -f "pnpm.*pg-plus-web-student dev" || true
 
 celery:
 	$(UV) run celery -A core worker -l info

@@ -11,6 +11,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.authapp.permissions import RolePermission
 from .models import (
     ProjectSelection,
     StudentReviewTicket,
@@ -19,6 +20,7 @@ from .models import (
 )
 from .serializers import (
     ProjectSelectionSerializer,
+    OverrideDecisionSerializer,
     ReviewDecisionSerializer,
     StudentReviewTicketSerializer,
     TeacherProjectSerializer,
@@ -110,8 +112,22 @@ class ProjectSelectionViewSet(viewsets.ModelViewSet):
 
 class VolunteerRecordViewSet(viewsets.ModelViewSet):
     serializer_class = VolunteerRecordSerializer
-    permission_classes = [DemoFriendlyPermission]
+    permission_classes = [permissions.IsAuthenticated, RolePermission]
     queryset = VolunteerRecord.objects.select_related("project").all()
+    required_roles: Sequence[str] = ("teacher", "admin")
+
+    def get_permissions(self):
+        self.required_roles = self._required_roles_for_action()
+        return [permission() for permission in self.permission_classes]
+
+    def _required_roles_for_action(self) -> Sequence[str]:
+        teacher_only = {"create", "update", "partial_update", "destroy", "review"}
+        admin_only = {"override"}
+        if self.action in admin_only:
+            return ("admin",)
+        if self.action in teacher_only:
+            return ("teacher",)
+        return ("teacher", "admin")
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -208,11 +224,61 @@ class VolunteerRecordViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"])
+    def override(self, request: Request, pk: str | None = None) -> Response:
+        serializer = OverrideDecisionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        instance = self.get_object()
+        if instance.status == VolunteerRecord.ReviewStatus.PENDING:
+            return Response(
+                {"detail": "待审核任务需由教师处理，管理员不可直接审核。"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        action = payload["action"]
+        note = payload.get("note") or ""
+        reviewer = getattr(request.user, "username", "admin")
+        logs = list(instance.review_trail or [])
+        if action == "reopen":
+            instance.review_stage = VolunteerRecord.ReviewStage.STAGE1
+            instance.status = VolunteerRecord.ReviewStatus.PENDING
+            instance.review_notes = note
+            logs = []
+        else:
+            instance.status = VolunteerRecord.ReviewStatus.CANCELLED
+            instance.review_notes = note
+        logs.append(
+            {
+                "stage": instance.review_stage,
+                "reviewer": reviewer,
+                "note": f"管理员复核：{note}" if note else "管理员复核",
+                "timestamp": timezone.now().isoformat(),
+            }
+        )
+        instance.review_trail = logs
+        instance.save(update_fields=["review_stage", "status", "review_notes", "review_trail", "updated_at"])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
 
 class StudentReviewTicketViewSet(viewsets.ModelViewSet):
     serializer_class = StudentReviewTicketSerializer
-    permission_classes = [DemoFriendlyPermission]
+    permission_classes = [permissions.IsAuthenticated, RolePermission]
     queryset = StudentReviewTicket.objects.all()
+    required_roles: Sequence[str] = ("teacher", "admin")
+
+    def get_permissions(self):
+        self.required_roles = self._required_roles_for_action()
+        return [permission() for permission in self.permission_classes]
+
+    def _required_roles_for_action(self) -> Sequence[str]:
+        teacher_only = {"create", "update", "partial_update", "destroy", "review"}
+        admin_only = {"override"}
+        if self.action in admin_only:
+            return ("admin",)
+        if self.action in teacher_only:
+            return ("teacher",)
+        return ("teacher", "admin")
 
     @action(detail=True, methods=["post"])
     def review(self, request: Request, pk: str | None = None) -> Response:
@@ -243,6 +309,42 @@ class StudentReviewTicketViewSet(viewsets.ModelViewSet):
                 "stage": instance.review_stage,
                 "reviewer": reviewer,
                 "note": note,
+                "timestamp": timezone.now().isoformat(),
+            }
+        )
+        instance.review_trail = logs
+        instance.save(update_fields=["review_stage", "status", "review_notes", "review_trail", "updated_at"])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def override(self, request: Request, pk: str | None = None) -> Response:
+        serializer = OverrideDecisionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        instance = self.get_object()
+        if instance.status == StudentReviewTicket.ReviewStatus.PENDING:
+            return Response(
+                {"detail": "待审核任务需由教师处理，管理员不可直接审核。"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        action = payload["action"]
+        note = payload.get("note") or ""
+        reviewer = getattr(request.user, "username", "admin")
+        logs = list(instance.review_trail or [])
+        if action == "reopen":
+            instance.review_stage = StudentReviewTicket.ReviewStage.STAGE1
+            instance.status = StudentReviewTicket.ReviewStatus.PENDING
+            instance.review_notes = note
+            logs = []
+        else:
+            instance.status = StudentReviewTicket.ReviewStatus.CANCELLED
+            instance.review_notes = note
+        logs.append(
+            {
+                "stage": instance.review_stage,
+                "reviewer": reviewer,
+                "note": f"管理员复核：{note}" if note else "管理员复核",
                 "timestamp": timezone.now().isoformat(),
             }
         )

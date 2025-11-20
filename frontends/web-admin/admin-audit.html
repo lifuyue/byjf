@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加分审核 - 保研加分小助手管理员端</title>
+    <title>审核总览 - 保研加分小助手管理员端</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style/common.css">
     <link rel="stylesheet" href="style/admin-common.css">
@@ -13,8 +13,8 @@
     <!-- 头部 -->
     <div class="header-container">
         <h1 class="page-title">
-            <i class="fas fa-check-double"></i>
-            加分申请审核
+            <i class="fas fa-list-check"></i>
+            审核记录与复核
         </h1>
         <div class="user-section">
             <a href="admin-index.html" class="back-to-home">
@@ -35,6 +35,7 @@
                         <option value="pending" selected>待审核</option>
                         <option value="approved">已通过</option>
                         <option value="rejected">未通过</option>
+                        <option value="cancelled">已作废</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -80,7 +81,7 @@
         <!-- 申请列表 -->
         <div class="audit-list-section">
             <div class="section-header">
-                <h2>申请列表</h2>
+        <h2>申请列表</h2>
             </div>
 
             <div class="applications-list" id="applicationsList">
@@ -112,7 +113,7 @@
     <div class="modal" id="auditModal">
         <div class="modal-content audit-modal">
             <div class="modal-header">
-                <h3>申请详情审核</h3>
+                <h3>申请详情</h3>
                 <button class="close-modal" id="closeAuditModal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -183,49 +184,40 @@
                     </div>
 
                     <div class="detail-section">
-                        <h4>审核意见</h4>
+                        <h4>审核记录</h4>
+                        <div class="audit-history" id="auditHistory"></div>
                         <div class="audit-opinion">
+                            <label for="auditReason">复核说明（管理员操作时必填）</label>
                             <textarea 
                                 id="auditReason" 
-                                placeholder="请输入审核意见（必填）..."
+                                placeholder="填写原因后可发起复核或作废"
                                 rows="4"
                             ></textarea>
                             <div class="opinion-tips">
                                 <i class="fas fa-info-circle"></i>
-                                请详细说明通过或不通过的理由
+                                管理员仅可发起复核或作废，具体审核由教师完成。
                             </div>
                         </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>复核记录</h4>
+                        <div class="correction-list" id="correctionList"></div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn reject-btn" id="rejectBtn">
-                    <i class="fas fa-times"></i>
-                    不通过
+                <button class="modal-btn reject-btn" id="cancelBtn">
+                    <i class="fas fa-ban"></i>
+                    作废记录
                 </button>
-                <button class="modal-btn approve-btn" id="approveBtn">
-                    <i class="fas fa-check"></i>
-                    通过
+                <button class="modal-btn approve-btn" id="reopenBtn">
+                    <i class="fas fa-rotate-left"></i>
+                    发起复核
                 </button>
             </div>
         </div>
     </div>
-
-    <!-- 审核确认模态框 -->
-    <div class="modal" id="confirmModal">
-        <div class="modal-content confirm-modal">
-            <div class="modal-icon">
-                <i class="fas fa-check-circle" id="confirmIcon"></i>
-            </div>
-            <h3 class="modal-title" id="confirmTitle">确认通过申请</h3>
-            <p class="modal-text" id="confirmText">您确定要通过张三的数学建模竞赛申请吗？</p>
-            <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" id="cancelConfirm">取消</button>
-                <button class="modal-btn modal-btn-confirm" id="submitConfirm">确认</button>
-            </div>
-        </div>
-    </div>
-
     <script src="script/admin-audit.js"></script>
 </body>
 </html>
