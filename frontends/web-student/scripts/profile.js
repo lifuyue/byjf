@@ -1,59 +1,115 @@
-document.addEventListener('DOMContentLoaded', function() {
-        // 从localStorage获取用户数据
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+document.addEventListener('DOMContentLoaded', async function() {
+    const ACCESS_TOKEN_KEY = 'pg_plus_access_token';
+    const USER_PROFILE_KEY = 'pg_plus_user_profile';
+    const USER_DATA_KEY = 'userData';
+    const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
+    const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+    const AUTH_ME = `${API_BASE}/auth/me/`;
+    const STUDENTS_API = `${API_BASE}/scoring/students/`;
 
-        // 如果未登录，跳转到登录页面
-        if (!isLoggedIn) {
-            alert('请先登录！');
-            window.location.href = 'login.html';
-            return;
+    function getAccessToken() {
+        return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
+    }
+
+    function saveProfile(profile) {
+        localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+    }
+
+    async function fetchProfile() {
+        const token = getAccessToken();
+        if (!token) throw new Error('未登录');
+        const res = await fetch(AUTH_ME, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) {
+            throw new Error('登录已过期，请重新登录');
         }
+        return res.json();
+    }
 
-        // 设置用户数据
-        document.getElementById('userName').textContent = userData.nickname || userData.username || '张三';
-        document.getElementById('userAvatar').textContent = (userData.nickname || userData.username || '张三').charAt(0);
-        document.getElementById('userEmail').textContent = userData.username || 'zhangsan@example.com';
+    async function fetchStudentDetail(id) {
+        const token = getAccessToken();
+        const res = await fetch(`${STUDENTS_API}${id}/`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) {
+            const detail = await res.json().catch(() => ({}));
+            const msg = detail.detail || `加载失败(${res.status})`;
+            throw new Error(msg);
+        }
+        return res.json();
+    }
 
-        // 模拟其他用户数据
-        const mockUserData = {
-            gender: '男',
-            studentId: '20210005',
+    function fallbackUser(userData) {
+        return {
+            username: userData.username || '学生',
+            student_id: userData.student_id || '未知',
+            role: userData.role || 'student',
+            gender: '保密',
             college: '信息科学与技术学院',
             major: '计算机科学与技术',
-            gpa: '3.78',
-            points: '+6分',
-            rank: '第5名',
-            phone: '138****5678'
+            gpa: 0,
+            bonus: 0,
+            ranking: '-',
+            phone: '未填写'
         };
+    }
 
-        // 设置模拟数据
-        document.getElementById('userGender').textContent = mockUserData.gender;
-        document.getElementById('userStudentId').textContent = mockUserData.studentId;
-        document.getElementById('userCollege').textContent = mockUserData.college;
-        document.getElementById('userMajor').textContent = mockUserData.major;
-        document.getElementById('userGPA').textContent = mockUserData.gpa;
-        document.getElementById('userPoints').textContent = mockUserData.points;
-        document.getElementById('userRank').textContent = mockUserData.rank;
-        document.getElementById('userPhone').textContent = mockUserData.phone;
+    async function init() {
+        try {
+            const profile = await fetchProfile();
+            saveProfile(profile);
+            const detail = await fetchStudentDetail(profile.id);
+            renderProfile(profile, detail);
+        } catch (err) {
+            console.warn('加载真实数据失败，使用本地信息', err);
+            const userData = JSON.parse(localStorage.getItem(USER_DATA_KEY) || '{}');
+            renderProfile(fallbackUser(userData));
+        }
+    }
 
-        // 更换头像按钮点击事件
-        document.querySelector('.change-avatar-btn').addEventListener('click', function() {
-            alert('头像更换功能开发中...');
-        });
+    function renderProfile(profile, detail) {
+        const name = profile.username || detail?.username || '学生';
+        const avatarText = name.charAt(0);
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userAvatar').textContent = avatarText;
+        document.getElementById('userEmail').textContent = profile.username || detail?.username || '-';
 
-        // 编辑信息按钮点击事件
-        document.querySelectorAll('.action-btn')[0].addEventListener('click', function() {
-            alert('信息编辑功能开发中...');
-        });
+        const subjectScore = detail?.subject_score || {};
+        const gpa = subjectScore.gpa || 0;
+        const totalScore = detail?.total_score || 0;
+        const ranking = detail?.ranking || '-';
+        const college = detail?.college || '信息科学与技术学院';
+        const major = detail?.major || '计算机科学与技术';
 
-        // 修改密码按钮点击事件
-        document.querySelectorAll('.action-btn')[1].addEventListener('click', function() {
-            alert('密码修改功能开发中...');
-        });
+        document.getElementById('userGender').textContent = detail?.gender || '保密';
+        document.getElementById('userStudentId').textContent = profile.student_id || detail?.student_id || '-';
+        document.getElementById('userCollege').textContent = college;
+        document.getElementById('userMajor').textContent = major;
+        document.getElementById('userGPA').textContent = gpa ? gpa.toFixed(2) : '0.00';
+        document.getElementById('userPoints').textContent = `+${Math.max(0, (totalScore - (gpa * 25 || 0)).toFixed(1))}`;
+        document.getElementById('userRank').textContent = ranking === 0 ? '-' : ranking;
+        document.getElementById('userPhone').textContent = detail?.phone || '未填写';
+    }
 
-        // 导出个人信息按钮点击事件
-        document.querySelectorAll('.action-btn')[2].addEventListener('click', function() {
-            alert('个人信息导出功能开发中...');
-        });
+    // 按钮提示（功能占位）
+    document.querySelector('.change-avatar-btn').addEventListener('click', function() {
+        alert('头像更换功能开发中...');
     });
+
+    document.querySelectorAll('.action-btn')[0].addEventListener('click', function() {
+        alert('信息编辑功能开发中...');
+    });
+
+    document.querySelectorAll('.action-btn')[1].addEventListener('click', function() {
+        alert('密码修改功能开发中...');
+    });
+
+    document.querySelectorAll('.action-btn')[2].addEventListener('click', function() {
+        alert('个人信息导出功能开发中...');
+    });
+
+    if (!getAccessToken()) {
+        alert('请先登录！');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    init();
+});

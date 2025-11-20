@@ -37,6 +37,8 @@ PG-Plus 是面向“保研加分助手”场景的全栈脚手架。仓库以 Dj
 - 所有前端位于 `frontends/`，通过 pnpm workspace 统一安装依赖、运行 dev server、执行 lint/typecheck/build。
 - `frontends/web-student` 现在扮演统一入口：负责登录、身份判定和学生仪表盘渲染，并通过 iframe 嵌入 `web-teacher` 与 `web-admin`（二者仍保留独立 Vite 项目以便开发，直接访问会重定向回统一入口）。
 - 教师端/学生端的“教师加分项目 + 志愿工时认证”模块已经接入后端 `apps.programsapp`。所有项目、报名、志愿记录、学生审核票据均持久化在 SQLite/MySQL 中，并通过 `/api/v1/programs/*` API 统一管理，仍保留一审→二审→三审的流程、多阶段驳回/重提、OCR 标记等互动；学生端可在线编辑/删除待审记录并自动回到一审，教师端刷新即可看到数据库中的真实状态。
+- 管理员审核职能是“查看 + 复核”：admin 只能查看全量记录并发起复核/作废（`/override`），正常审核（/review）仅限教师；后端使用 RolePermission 做显式限制。
+- 专业排名、个人主页等学生/教师页面已接入 `/api/v1/scoring/students/` 与 `/api/v1/auth/me/` 实时数据，无法获取时才回退示例数据。
 
 ## 环境要求
 
@@ -168,7 +170,7 @@ pnpm --filter pg-plus-web-teacher preview -- --host
 | 启动后端 | `uv run python backend/manage.py runserver 0.0.0.0:8000` | 读取 `.env` |
 | 启动 Celery | `uv run celery -A backend.core worker` | Redis URL 取自 `.env` |
 | 安装前端依赖 | `cd frontends && pnpm install` | 仅需执行一次 |
-| 全量前端 dev | `cd frontends && pnpm dev` | 并行启动三个子应用 |
+| 前端 dev（统一入口） | `cd frontends && pnpm --filter pg-plus-web-student dev` | 同时托管 /gsapp、/gsapp/teacher、/gsapp/admin |
 | 单独 dev | `pnpm --filter pg-plus-web-student dev` 等 | 可在 `frontends/` 内执行 |
 | 构建静态资源 | `cd frontends && pnpm build` | 输出到各自 `dist/` |
 | 前端 lint/typecheck | `pnpm lint` / `pnpm typecheck` | workspace 级别 |
