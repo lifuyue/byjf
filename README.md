@@ -103,7 +103,7 @@ pnpm install
 ### 7. 启动前端（统一入口 + iframe 工作台）
 
 ```bash
-# 同时启动学生/教师/管理端（对应 5173/5174/5175）
+# 同时启动学生/教师/管理端（对应 5175/5174/5173）
 pnpm dev
 
 # 或按需启动
@@ -116,7 +116,7 @@ pnpm --filter pg-plus-web-admin dev     # 仅管理员 iframe
 
 ### 8. 登录体验
 
-1. 浏览器打开 `http://localhost:5173/gsapp/`（唯一入口）。
+1. 浏览器打开 `http://localhost:5175/gsapp/`（唯一入口）。
 2. 点击“登录”并输入示例账号（如下表）。
 3. 系统会根据角色自动切换工作台：学生直接渲染原有仪表盘，教师/管理员通过 iframe 加载 `web-teacher` / `web-admin`。
 
@@ -126,7 +126,7 @@ pnpm --filter pg-plus-web-admin dev     # 仅管理员 iframe
 | 教师 | `teacher001` | `Passw0rd!` | 发布项目、审核志愿工时和学生审批 |
 | 管理员 | `admin001` | `Passw0rd!` | 进入管理员模板控制台（目前为静态页面） |
 
-> 如果单独访问 `http://localhost:5175/gsapp/teacher/` 或 `http://localhost:5174/gsapp/admin/`，页面会提示并重定向回 `/gsapp/` 确保走统一登录流程。
+> 如果单独访问 `http://localhost:5174/gsapp/teacher/` 或 `http://localhost:5173/gsapp/admin/`，页面会提示并重定向回 `/gsapp/` 确保走统一登录流程。
 
 > 调整 API 域名：`frontends/web-student/index.html`、`frontends/web-teacher/index.html` 中的 `<meta name="pg-plus-api-base" ...>` 控制后端地址；部署到其他主机时修改该 meta 即可。
 

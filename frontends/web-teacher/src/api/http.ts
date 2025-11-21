@@ -31,7 +31,7 @@ httpClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login.html';
+      window.location.href = '/login教师端.html';
     }
     return Promise.reject(error);
   }

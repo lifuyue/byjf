@@ -22,14 +22,40 @@ from .serializers import (
     TeacherProjectSerializer,
     VolunteerRecordSerializer,
 )
+from apps.scoringapp.models import Student
 
 
-class DemoFriendlyPermission(permissions.AllowAny):
+class IsTeacherOrAdmin(permissions.BasePermission):
     """
-    Placeholder permission that keeps the API open for the static demo.
-
-    Replace with real role-based checks once the SPA hooks into JWT auth.
+    检查用户是否为教师或管理员角色
     """
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        return request.user.role in [Student.ROLE_TEACHER, Student.ROLE_ADMIN]
+
+
+class IsStudentOrReadOnly(permissions.BasePermission):
+    """
+    学生可以读取和创建自己的记录，但只能修改自己的待审核记录
+    """
+    def has_permission(self, request, view):
+        # 只读操作允许所有已认证用户
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        # POST操作允许所有已认证用户
+        if request.method == 'POST':
+            return request.user.is_authenticated
+        return False
+    
+    def has_object_permission(self, request, view, obj):
+        # 只有学生可以修改自己的记录，并且记录必须是待审核状态
+        if request.method in ['PUT', 'PATCH', 'DELETE']:
+            # 检查是否是本人的记录
+            if hasattr(obj, 'student_account'):
+                return obj.student_account == request.user.username
+            return False
+        return True
 
 
 REVIEW_STAGES: Sequence[str] = (
@@ -52,19 +78,28 @@ def _next_stage(current: str) -> str:
 
 class TeacherProjectViewSet(viewsets.ModelViewSet):
     serializer_class = TeacherProjectSerializer
-    permission_classes = [DemoFriendlyPermission]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         queryset = TeacherProject.objects.all().order_by("-created_at")
+        # 学生只能看到已发布的项目
+        if hasattr(self.request.user, 'role') and self.request.user.role == Student.ROLE_STUDENT:
+            queryset = queryset.filter(status=TeacherProject.Status.PUBLISHED)
         status_param = self.request.query_params.get("status")
         if status_param:
             queryset = queryset.filter(status=status_param)
         return queryset
+    
+    def get_permissions(self):
+        # 创建项目需要教师或管理员权限
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsTeacherOrAdmin()]
+        return [permissions.IsAuthenticated()]
 
 
 class ProjectSelectionViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSelectionSerializer
-    permission_classes = [DemoFriendlyPermission]
+    permission_classes = [IsStudentOrReadOnly]
     queryset = ProjectSelection.objects.select_related("project").all()
 
     def get_queryset(self):
@@ -72,6 +107,9 @@ class ProjectSelectionViewSet(viewsets.ModelViewSet):
         student_account = self.request.query_params.get("student_account")
         if student_account:
             queryset = queryset.filter(student_account=student_account)
+        # 学生只能查看自己的选择记录
+        if hasattr(self.request.user, 'role') and self.request.user.role == Student.ROLE_STUDENT:
+            queryset = queryset.filter(student_account=self.request.user.username)
         project_id = self.request.query_params.get("project")
         if project_id:
             queryset = queryset.filter(project_id=project_id)
@@ -86,7 +124,7 @@ class ProjectSelectionViewSet(viewsets.ModelViewSet):
 
 class VolunteerRecordViewSet(viewsets.ModelViewSet):
     serializer_class = VolunteerRecordSerializer
-    permission_classes = [DemoFriendlyPermission]
+    permission_classes = [IsStudentOrReadOnly]
     queryset = VolunteerRecord.objects.select_related("project").all()
 
     def get_queryset(self):
@@ -94,10 +132,19 @@ class VolunteerRecordViewSet(viewsets.ModelViewSet):
         student_account = self.request.query_params.get("student_account")
         if student_account:
             queryset = queryset.filter(student_account=student_account)
+        # 学生只能查看自己的志愿记录
+        if hasattr(self.request.user, 'role') and self.request.user.role == Student.ROLE_STUDENT:
+            queryset = queryset.filter(student_account=self.request.user.username)
         status_param = self.request.query_params.get("status")
         if status_param:
             queryset = queryset.filter(status=status_param)
         return queryset
+        
+    def get_permissions(self):
+        # 审核操作需要教师或管理员权限
+        if self.action == 'review':
+            return [IsTeacherOrAdmin()]
+        return [IsStudentOrReadOnly()]
 
     def perform_create(self, serializer):
         submitted_via = serializer.validated_data.get("submitted_via") or VolunteerRecord.SubmitChannel.STUDENT
@@ -187,8 +234,20 @@ class VolunteerRecordViewSet(viewsets.ModelViewSet):
 
 class StudentReviewTicketViewSet(viewsets.ModelViewSet):
     serializer_class = StudentReviewTicketSerializer
-    permission_classes = [DemoFriendlyPermission]
+    permission_classes = [IsTeacherOrAdmin]
     queryset = StudentReviewTicket.objects.all()
+    
+    def get_permissions(self):
+        # 学生可以提交审核申请
+        if self.action == 'create':
+            return [permissions.IsAuthenticated()]
+        # 审核操作需要教师或管理员权限
+        if self.action in ['review', 'update', 'partial_update', 'destroy']:
+            return [IsTeacherOrAdmin()]
+        # 学生可以查看自己的申请
+        if self.action in ['list', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+        return [IsTeacherOrAdmin()]
 
     @action(detail=True, methods=["post"])
     def review(self, request: Request, pk: str | None = None) -> Response:
