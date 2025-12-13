@@ -206,9 +206,13 @@ body {
 
 .stat-action {
     margin-left: 15px;
+    flex-shrink: 0;
 }
 
 .stat-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: #4a6fa5;
     color: white;
     padding: 8px 16px;
@@ -216,6 +220,7 @@ body {
     text-decoration: none;
     font-size: 0.85rem;
     font-weight: 500;
+    white-space: nowrap;
     transition: all 0.3s ease;
 }
 
