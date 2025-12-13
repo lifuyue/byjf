@@ -165,6 +165,8 @@ body {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 18px;
     transition: all 0.3s ease;
     border-left: 4px solid #4a6fa5;
 }
@@ -183,13 +185,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 20px;
     color: white;
     font-size: 24px;
+    flex: 0 0 60px;
 }
 
 .stat-content {
-    flex: 1;
+    flex: 1 1 140px;
+    min-width: 0;
 }
 
 .stat-value {
@@ -197,15 +200,21 @@ body {
     font-weight: bold;
     color: #2c3e50;
     margin-bottom: 5px;
+    white-space: nowrap;
+    line-height: 1.1;
 }
 
 .stat-label {
     color: #666;
     font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 .stat-action {
-    margin-left: 15px;
+    margin-left: auto;
     flex-shrink: 0;
 }
 

@@ -6,9 +6,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initAuditPage() {
+    const params = new URLSearchParams(window.location.search);
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
-        statusFilter.value = 'pending';
+        statusFilter.value = params.get('status') || 'pending';
+    }
+
+    const typeFilter = document.getElementById('typeFilter');
+    if (typeFilter) {
+        const next = params.get('type');
+        if (next) typeFilter.value = next;
+    }
+
+    const timeFilter = document.getElementById('timeFilter');
+    if (timeFilter) {
+        const next = params.get('time');
+        if (next) timeFilter.value = next;
     }
 }
 
