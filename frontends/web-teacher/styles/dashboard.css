@@ -1,14 +1,19 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+html,
+body {
+    height: 100%;
 }
 
 body {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
     padding: 20px;
+}
+
+body.dashboard-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .header-container {
@@ -132,6 +137,11 @@ body {
     min-height: 80vh;
 }
 
+body.dashboard-page .container {
+    flex: 1;
+    min-height: 0;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -144,6 +154,8 @@ body {
     color: white;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .right-panel {
@@ -152,6 +164,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 25px;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .header {
@@ -964,12 +978,29 @@ body {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+    body.dashboard-page {
+        height: auto;
+        overflow: auto;
+        display: block;
+    }
+
     .container {
         flex-direction: column;
     }
 
+    body.dashboard-page .container {
+        flex: initial;
+        min-height: 80vh;
+    }
+
     .left-panel, .right-panel {
         padding: 20px;
+    }
+
+    body.dashboard-page .left-panel,
+    body.dashboard-page .right-panel {
+        min-height: auto;
+        overflow: visible;
     }
 
     .progress-details {

@@ -1,7 +1,22 @@
+html,
 body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
+    height: 100%;
+}
+
+body.dashboard-page {
+	            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+	            min-height: 100vh;
+	            height: 100vh;
+	            padding: 20px;
+	            display: flex;
+	            flex-direction: column;
+	            overflow: hidden;
+	        }
+
+        .dashboard-page .dashboard-view {
+            flex: 1;
+            min-height: 0;
+            display: flex;
         }
 
         .header-container {
@@ -112,40 +127,45 @@ body {
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
         }
 
-.container {
-    display: flex;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    animation: fadeIn 0.8s ease-out;
-    min-height: 80vh;
-}
+	.container {
+	    display: flex;
+	    max-width: 1200px;
+	    width: 100%;
+	    margin: 0 auto;
+	    background: white;
+	    border-radius: 16px;
+	    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+	    overflow: hidden;
+	    animation: fadeIn 0.8s ease-out;
+	    flex: 1;
+	    min-height: 0;
+	}
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-        .left-panel {
-            flex: 1;
-            padding: 30px;
-            background: linear-gradient(to bottom right, #4a6fa5, #2c3e50);
-            color: white;
-            display: flex;
-            flex-direction: column;
-        }
+	        .left-panel {
+	            flex: 1;
+	            padding: 30px;
+	            background: linear-gradient(to bottom right, #4a6fa5, #2c3e50);
+	            color: white;
+	            display: flex;
+	            flex-direction: column;
+	            min-height: 0;
+	            overflow-y: auto;
+	        }
 
-        .right-panel {
-            flex: 1;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
+	        .right-panel {
+	            flex: 1;
+	            padding: 30px;
+	            display: flex;
+	            flex-direction: column;
+	            gap: 25px;
+	            min-height: 0;
+	            overflow-y: auto;
+	        }
 
         .header {
             margin-bottom: 30px;
@@ -984,14 +1004,29 @@ body {
         }
 
         /* 响应式设计 */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
+	        @media (max-width: 768px) {
+	            body.dashboard-page {
+	                height: auto;
+	                overflow: auto;
+	            }
 
-            .left-panel, .right-panel {
-                padding: 20px;
-            }
+	            .dashboard-page .dashboard-view {
+	                flex: initial;
+	                min-height: auto;
+	                display: block;
+	            }
+
+	            .container {
+	                flex-direction: column;
+	                flex: initial;
+	                min-height: 80vh;
+	            }
+
+	            .left-panel, .right-panel {
+	                padding: 20px;
+	                min-height: auto;
+	                overflow: visible;
+	            }
 
             .progress-details {
                 margin-top: 15px;
@@ -1094,6 +1129,36 @@ body {
 .auth-form-card .form-field input:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.auth-page .primary-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(to right, #4a6fa5, #2c3e50);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 10px 24px rgba(44, 62, 80, 0.25);
+}
+
+.auth-page .primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(44, 62, 80, 0.3);
+}
+
+.auth-page .primary-btn:active {
+    transform: translateY(0);
+}
+
+.auth-page .primary-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.25), 0 14px 30px rgba(44, 62, 80, 0.3);
 }
 
 .auth-submit-btn {

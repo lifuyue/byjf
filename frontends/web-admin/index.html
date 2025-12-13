@@ -55,38 +55,47 @@
                     </div>
                 </div>
                 
-                <!-- 系统用户 -->
-                <div class="admin-stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="totalUsers">156</div>
-                        <div class="stat-label">系统用户</div>
-                    </div>
-                </div>
-                
-                <!-- 今日新增 -->
-                <div class="admin-stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-plus-circle"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="todayApplications">8</div>
-                        <div class="stat-label">今日新增申请</div>
-                    </div>
-                </div>
-                
-                <!-- 通过率 -->
-                <div class="admin-stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="approvalRate">78%</div>
-                        <div class="stat-label">平均通过率</div>
-                    </div>
-                </div>
+	                <!-- 系统用户 -->
+	                <div class="admin-stat-card">
+	                    <div class="stat-icon">
+	                        <i class="fas fa-users"></i>
+	                    </div>
+	                    <div class="stat-content">
+	                        <div class="stat-value" id="totalUsers">156</div>
+	                        <div class="stat-label">系统用户</div>
+	                    </div>
+	                    <div class="stat-action">
+	                        <a href="admin-users.html" class="stat-link">查看用户列表</a>
+	                    </div>
+	                </div>
+	                
+	                <!-- 今日新增 -->
+	                <div class="admin-stat-card">
+	                    <div class="stat-icon">
+	                        <i class="fas fa-plus-circle"></i>
+	                    </div>
+	                    <div class="stat-content">
+	                        <div class="stat-value" id="todayApplications">8</div>
+	                        <div class="stat-label">今日新增申请</div>
+	                    </div>
+	                    <div class="stat-action">
+	                        <a href="admin-audit.html?status=pending&time=today" class="stat-link">查看今日待审</a>
+	                    </div>
+	                </div>
+	                
+	                <!-- 通过率 -->
+	                <div class="admin-stat-card">
+	                    <div class="stat-icon">
+	                        <i class="fas fa-chart-line"></i>
+	                    </div>
+	                    <div class="stat-content">
+	                        <div class="stat-value" id="approvalRate">78%</div>
+	                        <div class="stat-label">平均通过率</div>
+	                    </div>
+	                    <div class="stat-action">
+	                        <a href="admin-audit.html?status=all" class="stat-link">查看明细</a>
+	                    </div>
+	                </div>
             </div>
         </div>
         
