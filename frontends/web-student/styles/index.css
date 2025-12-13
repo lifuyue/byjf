@@ -1131,6 +1131,36 @@ body.dashboard-page {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+.auth-page .primary-btn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(to right, #4a6fa5, #2c3e50);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 10px 24px rgba(44, 62, 80, 0.25);
+}
+
+.auth-page .primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(44, 62, 80, 0.3);
+}
+
+.auth-page .primary-btn:active {
+    transform: translateY(0);
+}
+
+.auth-page .primary-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.25), 0 14px 30px rgba(44, 62, 80, 0.3);
+}
+
 .auth-submit-btn {
     width: 100%;
     justify-content: center;
