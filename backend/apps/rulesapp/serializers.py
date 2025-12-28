@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 
-from .models import ScoreLimit, Policy, ProofReview
+from .models import ScoreCategoryRule, ScoreLimit, Policy, ProofReview
 
 
 class ScoreLimitSerializer(serializers.ModelSerializer):
@@ -40,3 +40,9 @@ class ProofReviewSerializer(serializers.ModelSerializer):
 			"reviewed_at",
 			"created_at",
 		)
+
+
+class ScoreCategoryRuleSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = ScoreCategoryRule
+		fields = ("id", "name", "cap", "ratio", "order", "created_at", "updated_at")

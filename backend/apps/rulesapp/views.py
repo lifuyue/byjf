@@ -12,8 +12,10 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
-from .models import Policy, ProofReview, ScoreLimit
-from .serializers import PolicySerializer, ProofReviewSerializer, ScoreLimitSerializer
+from apps.authapp.permissions import RolePermission
+
+from .models import Policy, ProofReview, ScoreCategoryRule, ScoreLimit
+from .serializers import PolicySerializer, ProofReviewSerializer, ScoreCategoryRuleSerializer, ScoreLimitSerializer
 
 if TYPE_CHECKING:
     from apps.scoringapp.models import Student
@@ -36,6 +38,63 @@ class ScoreLimitView(APIView):
         serializer = ScoreLimitSerializer(obj, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        return Response(serializer.data)
+
+
+class ScoreCategoryRuleView(APIView):
+    """配置加分类别上限与比例。"""
+
+    permission_classes = (IsAuthenticated, RolePermission)
+    required_roles = ("admin",)
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        rules = ScoreCategoryRule.objects.order_by("order", "id")
+        serializer = ScoreCategoryRuleSerializer(rules, many=True)
+        return Response(serializer.data)
+
+    def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        payload = request.data
+        if not isinstance(payload, list):
+            return Response({"detail": "请求体必须为数组"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cleaned: list[dict[str, Any]] = []
+        seen_names: set[str] = set()
+        total_ratio = 0
+        for index, item in enumerate(payload):
+            if not isinstance(item, dict):
+                return Response({"detail": "每条规则必须是对象"}, status=status.HTTP_400_BAD_REQUEST)
+            name = str(item.get("name", "")).strip()
+            if not name:
+                return Response({"detail": "分类名称不能为空"}, status=status.HTTP_400_BAD_REQUEST)
+            if name in seen_names:
+                return Response({"detail": f"分类名称重复: {name}"}, status=status.HTTP_400_BAD_REQUEST)
+            seen_names.add(name)
+
+            try:
+                cap = float(item.get("cap", 0))
+            except (TypeError, ValueError):
+                return Response({"detail": f"{name} 上限必须是数字"}, status=status.HTTP_400_BAD_REQUEST)
+            if cap < 0:
+                return Response({"detail": f"{name} 上限不能为负"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                ratio = int(item.get("ratio", 0))
+            except (TypeError, ValueError):
+                return Response({"detail": f"{name} 比例必须是整数"}, status=status.HTTP_400_BAD_REQUEST)
+            if ratio < 0 or ratio > 100:
+                return Response({"detail": f"{name} 比例需在 0-100 之间"}, status=status.HTTP_400_BAD_REQUEST)
+
+            total_ratio += ratio
+            cleaned.append({"name": name, "cap": cap, "ratio": ratio, "order": index + 1})
+
+        if cleaned and total_ratio != 100:
+            return Response({"detail": "所有加分比例之和必须为 100%"}, status=status.HTTP_400_BAD_REQUEST)
+
+        ScoreCategoryRule.objects.all().delete()
+        if cleaned:
+            ScoreCategoryRule.objects.bulk_create([ScoreCategoryRule(**item) for item in cleaned])
+        rules = ScoreCategoryRule.objects.order_by("order", "id")
+        serializer = ScoreCategoryRuleSerializer(rules, many=True)
         return Response(serializer.data)
 
 

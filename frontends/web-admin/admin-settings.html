@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>系部保研政策设置 - 保研加分小助手管理员端</title>
+    <meta name="pg-plus-api-base" content="http://localhost:8000/api/v1">
+    <meta name="pg-plus-login-base" content="../" data-dev="http://localhost:5173/gsapp">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style/admin-settings.css">
 </head>
@@ -34,6 +36,39 @@
             <div class="policies-list" id="policiesList">
                 <!-- 系部政策列表将由JavaScript动态生成 -->
             </div>
+        </div>
+
+        <!-- 加分规则设计 -->
+        <div class="settings-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-layer-group"></i>
+                    加分规则设计
+                </h2>
+            </div>
+            <p class="rules-intro">
+                用于配置同类竞赛/证书的单类加分上限，并设定各加分目录的占比（百分比，总和需为 100%）。
+            </p>
+            <div class="rules-summary">
+                <span>当前比例合计：<strong id="rulesRatioTotal">0%</strong></span>
+                <span class="ratio-status" id="rulesRatioStatus">未达标</span>
+            </div>
+            <div class="rules-table">
+                <div class="rules-row rules-header">
+                    <div>分类名称</div>
+                    <div>单类上限</div>
+                    <div>加分比例(%)</div>
+                    <div>操作</div>
+                </div>
+                <div class="rules-body" id="rulesBody"></div>
+            </div>
+            <div class="rules-actions">
+                <button class="action-btn add-btn" id="addRuleBtn">
+                    <i class="fas fa-plus"></i>
+                    新增分类
+                </button>
+            </div>
+            <div class="rules-hint" id="rulesHint"></div>
         </div>
 
         <!-- 操作按钮 -->
@@ -106,6 +141,7 @@
         </div>
     </div>
 
+    <script src="script/admin-common.js"></script>
     <script src="script/admin-settings.js"></script>
 </body>
 </html>

@@ -121,11 +121,14 @@ class VolunteerRecordViewSet(viewsets.ModelViewSet):
         return [permission() for permission in self.permission_classes]
 
     def _required_roles_for_action(self) -> Sequence[str]:
-        teacher_only = {"create", "update", "partial_update", "destroy", "review"}
+        teacher_only = {"update", "partial_update", "destroy", "review"}
+        student_submit = {"create"}
         admin_only = {"override"}
         read_only = {"list", "retrieve"}
         if self.action in admin_only:
             return ("admin",)
+        if self.action in student_submit:
+            return ("student", "teacher", "admin")
         if self.action in teacher_only:
             return ("teacher",)
         if self.action in read_only:

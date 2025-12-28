@@ -773,6 +773,17 @@ body.dashboard-page .container {
     color: #b91c1c;
 }
 
+.volunteer-action-btn.secondary {
+    background: #e0f2ff;
+    color: #1d4ed8;
+}
+
+.volunteer-action-btn.ghost {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
 .ocr-flag {
     display: inline-flex;
     align-items: center;

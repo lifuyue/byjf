@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.rulesapp.models import ProofReview, ScoreLimit
+from apps.rulesapp.models import ProofReview, ScoreCategoryRule, ScoreLimit
 from apps.scoringapp.models import AcademicExpertise, Student
 
 
@@ -30,6 +30,44 @@ def test_admin_can_read_and_update_score_limits(api_client: APIClient, admin_use
     assert update_response.status_code == status.HTTP_200_OK
     assert update_response.data["a_max"] == 60
     assert update_response.data["b_max"] == 12
+
+
+@pytest.mark.django_db
+def test_admin_can_update_score_category_rules(api_client: APIClient, admin_user: Student) -> None:
+    api_client.force_authenticate(admin_user)
+
+    get_response = api_client.get("/api/v1/rules/score-category-rules/")
+    assert get_response.status_code == status.HTTP_200_OK
+    assert get_response.data == []
+
+    payload = [
+        {"name": "竞赛", "cap": 20, "ratio": 60},
+        {"name": "证书", "cap": 10, "ratio": 40},
+    ]
+    update_response = api_client.put(
+        "/api/v1/rules/score-category-rules/",
+        payload,
+        format="json",
+    )
+    assert update_response.status_code == status.HTTP_200_OK
+    assert len(update_response.data) == 2
+    assert ScoreCategoryRule.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_category_rules_ratio_must_equal_100(api_client: APIClient, admin_user: Student) -> None:
+    api_client.force_authenticate(admin_user)
+
+    payload = [
+        {"name": "竞赛", "cap": 20, "ratio": 50},
+        {"name": "证书", "cap": 10, "ratio": 40},
+    ]
+    response = api_client.put(
+        "/api/v1/rules/score-category-rules/",
+        payload,
+        format="json",
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db

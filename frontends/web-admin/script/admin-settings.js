@@ -1,7 +1,7 @@
 // 系统设置页面功能
 document.addEventListener('DOMContentLoaded', function() {
     console.log('系部保研政策设置页面开始加载');
-    
+
     // 初始化页面
     initSettingsPage();
     
@@ -11,6 +11,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // 加载设置数据
     loadSettings();
 });
+
+const apiMeta = document.querySelector('meta[name="pg-plus-api-base"]');
+const API_BASE = (apiMeta?.getAttribute('content') || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+const SCORE_RULES_ENDPOINT = `${API_BASE}/rules/score-category-rules/`;
+
+const rulesBody = document.getElementById('rulesBody');
+const addRuleBtn = document.getElementById('addRuleBtn');
+const rulesHint = document.getElementById('rulesHint');
+const rulesRatioTotal = document.getElementById('rulesRatioTotal');
+const rulesRatioStatus = document.getElementById('rulesRatioStatus');
+
+const DEFAULT_SCORE_RULES = [
+    { name: '竞赛', cap: 20, ratio: 40 },
+    { name: '证书', cap: 10, ratio: 20 },
+    { name: '科研', cap: 20, ratio: 25 },
+    { name: '志愿', cap: 10, ratio: 15 }
+];
+
+let scoreRules = [];
 
 // 初始化设置页面
 function initSettingsPage() {
@@ -25,6 +44,15 @@ function setupEventListeners() {
     
     if (saveBtn) saveBtn.addEventListener('click', saveSettings);
     if (resetBtn) resetBtn.addEventListener('click', resetSettings);
+
+    if (addRuleBtn) {
+        addRuleBtn.addEventListener('click', addScoreRuleRow);
+    }
+
+    if (rulesBody) {
+        rulesBody.addEventListener('input', handleRuleInputChange);
+        rulesBody.addEventListener('click', handleRuleActionClick);
+    }
     
     // 模态框控制
     setupModalControls();
@@ -82,6 +110,222 @@ function setupModalControls() {
 function loadSettings() {
     // 加载系部政策
     loadCollegePolicies();
+    loadScoreRules();
+}
+
+function getAdminToken() {
+    if (typeof getAccessTokenFromStorage === 'function') {
+        return getAccessTokenFromStorage();
+    }
+    return localStorage.getItem('pg_plus_access_token') || '';
+}
+
+async function adminRequest(url, options = {}) {
+    const token = getAdminToken();
+    if (!token) {
+        alert('未检测到管理员登录状态，请重新登录。');
+        throw new Error('未登录');
+    }
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if (response.status === 401) {
+        alert('登录已过期，请重新登录。');
+        throw new Error('登录过期');
+    }
+    if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        const message = detail.detail || detail.message || `请求失败（${response.status}）`;
+        throw new Error(message);
+    }
+    if (response.status === 204) {
+        return null;
+    }
+    return response.json();
+}
+
+async function loadScoreRules() {
+    if (!rulesBody) {
+        return;
+    }
+    try {
+        const data = await adminRequest(SCORE_RULES_ENDPOINT);
+        scoreRules = Array.isArray(data) && data.length ? data.map(normalizeRule) : [...DEFAULT_SCORE_RULES];
+        renderScoreRules();
+        if (!data || !data.length) {
+            showRulesHint('当前暂无规则，请补全后点击“保存所有设置”生效。', 'error');
+        } else {
+            showRulesHint('');
+        }
+    } catch (error) {
+        console.error('加载加分规则失败', error);
+        scoreRules = [...DEFAULT_SCORE_RULES];
+        renderScoreRules();
+        showRulesHint(error.message || '加载失败，请稍后重试', 'error');
+    }
+}
+
+function normalizeRule(rule = {}) {
+    return {
+        name: String(rule.name || '').trim(),
+        cap: Number.isFinite(Number(rule.cap)) ? Number(rule.cap) : 0,
+        ratio: Number.isFinite(Number(rule.ratio)) ? Number(rule.ratio) : 0
+    };
+}
+
+function renderScoreRules() {
+    if (!rulesBody) {
+        return;
+    }
+    if (!scoreRules.length) {
+        rulesBody.innerHTML = `
+            <div class="rules-row">
+                <div>暂无规则，请新增分类</div>
+                <div>--</div>
+                <div>--</div>
+                <div>--</div>
+            </div>
+        `;
+        updateRatioSummary(0);
+        return;
+    }
+
+    rulesBody.innerHTML = scoreRules.map((rule, index) => `
+        <div class="rules-row" data-index="${index}">
+            <input type="text" data-field="name" value="${rule.name}" placeholder="例如：竞赛">
+            <input type="number" data-field="cap" value="${rule.cap}" min="0" step="0.1">
+            <input type="number" data-field="ratio" value="${rule.ratio}" min="0" max="100" step="1">
+            <button class="rule-delete-btn" data-action="delete-rule">删除</button>
+        </div>
+    `).join('');
+
+    updateRatioSummary(getRatioTotal());
+}
+
+function updateRatioSummary(total) {
+    if (rulesRatioTotal) {
+        rulesRatioTotal.textContent = `${total}%`;
+    }
+    if (rulesRatioStatus) {
+        const isOk = total === 100;
+        rulesRatioStatus.textContent = isOk ? '已达标' : '未达标';
+        rulesRatioStatus.classList.toggle('ok', isOk);
+    }
+}
+
+function getRatioTotal() {
+    return scoreRules.reduce((sum, rule) => sum + Number(rule.ratio || 0), 0);
+}
+
+function handleRuleInputChange(event) {
+    const row = event.target.closest('.rules-row[data-index]');
+    if (!row) {
+        return;
+    }
+    const index = Number(row.dataset.index);
+    const field = event.target.dataset.field;
+    if (!Number.isInteger(index) || !field) {
+        return;
+    }
+    if (field === 'name') {
+        scoreRules[index].name = event.target.value.trim();
+    } else if (field === 'cap') {
+        scoreRules[index].cap = Number(event.target.value || 0);
+    } else if (field === 'ratio') {
+        scoreRules[index].ratio = Number(event.target.value || 0);
+    }
+    updateRatioSummary(getRatioTotal());
+}
+
+function handleRuleActionClick(event) {
+    const actionBtn = event.target.closest('[data-action]');
+    if (!actionBtn) {
+        return;
+    }
+    const row = actionBtn.closest('.rules-row[data-index]');
+    if (!row) {
+        return;
+    }
+    const index = Number(row.dataset.index);
+    if (!Number.isInteger(index)) {
+        return;
+    }
+    scoreRules.splice(index, 1);
+    renderScoreRules();
+}
+
+function addScoreRuleRow() {
+    scoreRules.push({ name: '', cap: 0, ratio: 0 });
+    renderScoreRules();
+}
+
+function validateScoreRules() {
+    if (!scoreRules.length) {
+        return { ok: false, message: '请至少配置一个加分分类。' };
+    }
+    const nameSet = new Set();
+    for (const rule of scoreRules) {
+        if (!rule.name) {
+            return { ok: false, message: '分类名称不能为空。' };
+        }
+        if (nameSet.has(rule.name)) {
+            return { ok: false, message: `分类名称重复：${rule.name}` };
+        }
+        nameSet.add(rule.name);
+        if (!Number.isFinite(rule.cap) || rule.cap < 0) {
+            return { ok: false, message: `${rule.name} 的上限需为非负数。` };
+        }
+        if (!Number.isInteger(rule.ratio) || rule.ratio < 0 || rule.ratio > 100) {
+            return { ok: false, message: `${rule.name} 的比例需为 0-100 的整数。` };
+        }
+    }
+    const total = getRatioTotal();
+    if (total !== 100) {
+        return { ok: false, message: '所有加分比例之和必须为 100%。' };
+    }
+    return { ok: true };
+}
+
+async function saveScoreRules() {
+    const validation = validateScoreRules();
+    if (!validation.ok) {
+        showRulesHint(validation.message, 'error');
+        return false;
+    }
+    try {
+        const payload = scoreRules.map(rule => ({
+            name: rule.name,
+            cap: rule.cap,
+            ratio: rule.ratio
+        }));
+        const data = await adminRequest(SCORE_RULES_ENDPOINT, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+        scoreRules = Array.isArray(data) ? data.map(normalizeRule) : scoreRules;
+        renderScoreRules();
+        showRulesHint('加分规则已保存', 'success');
+        return true;
+    } catch (error) {
+        showRulesHint(error.message || '保存失败，请稍后重试', 'error');
+        return false;
+    }
+}
+
+function showRulesHint(message = '', type = '') {
+    if (!rulesHint) {
+        return;
+    }
+    rulesHint.textContent = message;
+    rulesHint.classList.remove('success');
+    if (type === 'success') {
+        rulesHint.classList.add('success');
+    }
 }
 
 // 加载系部政策
@@ -260,21 +504,27 @@ function savePolicy() {
 
 // 保存设置
 function saveSettings() {
-    // 显示成功消息
-    showSuccessMessage('所有系部政策设置保存成功！');
+    saveScoreRules().then(saved => {
+        if (saved) {
+            showSuccessMessage('所有设置保存成功！');
+        }
+    });
 }
 
 // 恢复默认设置
 function resetSettings() {
-    if (confirm('确定要恢复默认设置吗？这将重置所有系的保研政策为默认值。')) {
+    if (confirm('确定要恢复默认设置吗？这将重置所有系的保研政策与加分规则为默认值。')) {
         // 清除设置
         localStorage.removeItem('collegePolicies');
+        scoreRules = [...DEFAULT_SCORE_RULES];
+        renderScoreRules();
+        saveScoreRules();
         
         // 重新加载设置
         loadSettings();
         
         // 显示成功消息
-        showSuccessMessage('所有系部政策已恢复默认值！');
+        showSuccessMessage('所有设置已恢复默认值！');
     }
 }
 

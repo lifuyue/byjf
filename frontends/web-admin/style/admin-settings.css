@@ -78,6 +78,119 @@ body {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
+.rules-intro {
+    color: #5f6b7a;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.rules-summary {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 16px;
+}
+
+.ratio-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #fdecea;
+    color: #c0392b;
+}
+
+.ratio-status.ok {
+    background: #eafaf1;
+    color: #1e8449;
+}
+
+.rules-table {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.rules-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #edf1f5;
+}
+
+.rules-row:last-child {
+    border-bottom: none;
+}
+
+.rules-header {
+    background: #f5f7fb;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.rules-row input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #e1e5ee;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.rules-row input:focus {
+    outline: none;
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+}
+
+.rules-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 16px;
+}
+
+.add-btn {
+    background: #eef4ff;
+    color: #2f5fb3;
+    border-color: #d7e3ff;
+}
+
+.add-btn:hover {
+    background: #2f5fb3;
+    color: #fff;
+}
+
+.rule-delete-btn {
+    background: #fff0f0;
+    color: #c0392b;
+    border: 1px solid #f5c6c6;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rule-delete-btn:hover {
+    background: #c0392b;
+    color: #fff;
+}
+
+.rules-hint {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #c0392b;
+}
+
+.rules-hint.success {
+    color: #1e8449;
+}
+
 .section-header {
     margin-bottom: 25px;
     padding-bottom: 15px;

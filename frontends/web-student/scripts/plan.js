@@ -1,14 +1,33 @@
 document.addEventListener('DOMContentLoaded', function() {
         const planTableBody = document.getElementById('planTableBody');
         const addPlanBtn = document.getElementById('addPlanBtn');
+        const STORAGE_KEY = 'pg_plus_student_plan_v1';
 
         // 初始示例数据
-        let plans = [
+        const defaultPlans = [
             { id: 1, goal: "完成GPA提升至3.8", date: "2024-06-30", status: "in-progress" },
             { id: 2, goal: "参加全国大学生数学建模竞赛", date: "2024-05-15", status: "completed" },
             { id: 3, goal: "准备英语六级考试", date: "2024-09-01", status: "not-started" },
             { id: 4, goal: "完成科研项目论文", date: "2024-07-31", status: "in-progress" }
         ];
+        let plans = loadPlans();
+
+        function loadPlans() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                if (Array.isArray(saved) && saved.length) {
+                    return saved;
+                }
+            } catch (error) {
+                console.warn('读取本地计划失败，将使用默认数据', error);
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPlans));
+            return [...defaultPlans];
+        }
+
+        function persistPlans() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+        }
 
         // 渲染计划表格
         function renderPlans() {
@@ -150,6 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
             }
 
+            persistPlans();
             alert('计划保存成功！');
         }
 
@@ -157,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         function deletePlan(id) {
             if (confirm('确定要删除这个计划吗？')) {
                 plans = plans.filter(p => p.id !== id);
+                persistPlans();
                 renderPlans();
                 alert('计划删除成功！');
             }
@@ -173,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 status: 'not-started'
             });
 
+            persistPlans();
             renderPlans();
 
             // 聚焦到新添加的输入框
